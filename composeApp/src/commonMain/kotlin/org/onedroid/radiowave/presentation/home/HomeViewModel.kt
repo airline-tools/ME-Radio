@@ -139,7 +139,11 @@ class HomeViewModel(
         isTuning = false
         playerMessage = null
 
-        if (station.masperoName.isNullOrBlank() && !forceRefresh) {
+        // Use the URL already refreshed during app startup immediately.
+        // Re-fetching Maspero on every tap adds a network round-trip and makes
+        // station selection feel unresponsive. Refresh only when there is no
+        // usable URL or the user explicitly retries.
+        if (!forceRefresh && station.playableUrl.isNotBlank()) {
             selectedRadio = station
             play(station.playableUrl)
             return
