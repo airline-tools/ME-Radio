@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
@@ -124,10 +125,17 @@ class HomeViewModel(
             radioRepository.getMEStations()
                 .onSuccess { stations ->
                     radios = stations
-                    // Replace saved copies with refreshed catalog URLs when available.
-                    savedRadios = savedRadios.map { saved ->
-                        stations.firstOrNull { it.id == saved.id } ?: saved
+
+                    // Refresh saved station records as well, so expiring Maspero
+                    // stream URLs do not remain stale in the local database.
+                    val savedSnapshot = savedRadios
+                    savedSnapshot.forEach { saved ->
+                        val refreshed = stations.firstOrNull { it.id == saved.id }
+                        if (refreshed != null && refreshed.url != saved.url) {
+                            radioRepository.saveRadio(refreshed)
+                        }
                     }
+
                     catalogLoaded = true
                     errorMsg = null
                     isLoading = false
