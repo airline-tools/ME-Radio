@@ -109,17 +109,29 @@ class RemoteRadioDataSourceImpl(
         return Result.Success(
             catalog.map { station ->
                 val expectedName = station.masperoName?.trim()
-                val liveUrl = expectedName
-                    ?.let { name ->
-                        liveStreams.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.url
+                val liveStation = expectedName?.let { name ->
+                    liveStreams.firstOrNull {
+                        normalizeStationName(it.name) == normalizeStationName(name)
                     }
+                }
+                val liveUrl = liveStation?.url
                     ?.trim()
-                    ?.takeIf { it.isNotEmpty() && it.startsWith("https://") }
+                    ?.takeIf { it.startsWith("https://") && it.contains(".m3u8", ignoreCase = true) }
 
-                station.copy(stream = liveUrl ?: station.stream)
+                station.copy(
+                    stream = liveUrl ?: station.stream,
+                    streamReferer = liveStation?.source ?: station.streamReferer
+                )
             }
         )
     }
+
+    private fun normalizeStationName(value: String): String =
+        value.trim()
+            .replace("ـ", "")
+            .replace(Regex("[\\u064B-\\u065F\\u0670]"), "")
+            .replace(Regex("\\s+"), "")
+            .lowercase()
 
     private suspend fun <T> fetchFromMirrors(
         attempt: suspend (String) -> Result<T, DataError.Remote>
