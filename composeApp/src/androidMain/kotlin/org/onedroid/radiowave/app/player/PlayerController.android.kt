@@ -54,6 +54,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.C
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -87,7 +89,17 @@ import radiowave.composeapp.generated.resources.unable_to_detect
 
 actual class PlayerController(context: Context) : PlayerRepository {
 
-    private val player = ExoPlayer.Builder(context).build()
+    private val player = ExoPlayer.Builder(context).build().apply {
+        // Respect other audio apps and pause safely when headphones are unplugged.
+        setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(C.USAGE_MEDIA)
+                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                .build(),
+            true
+        )
+        setHandleAudioBecomingNoisy(true)
+    }
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
