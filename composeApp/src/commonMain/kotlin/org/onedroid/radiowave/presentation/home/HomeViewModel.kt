@@ -110,6 +110,32 @@ class HomeViewModel(
         isPlaying = !isPlaying
     }
 
+    fun closePlayer() {
+        selectedRadio = null
+        savedStatusJob?.cancel()
+    }
+
+    fun retrySelectedRadio() {
+        val current = selectedRadio ?: return
+        viewModelScope.launch {
+            radioRepository.getMEStations()
+                .onSuccess { stations ->
+                    val refreshed = stations.firstOrNull { it.id == current.id }
+                    if (refreshed != null && refreshed.url.isNotBlank()) {
+                        radios = radios.map { if (it.id == refreshed.id) refreshed else it }
+                        selectedRadio = refreshed
+                        play(refreshed.url)
+                        errorMsg = null
+                    } else {
+                        errorMsg = UiText.DynamicString("تعذر تحديث رابط البث. حاول مرة أخرى بعد قليل.")
+                    }
+                }
+                .onError { error ->
+                    errorMsg = error.toUiText()
+                }
+        }
+    }
+
     fun updateSearchQuery(query: String) {
         searchQuery = query
     }
