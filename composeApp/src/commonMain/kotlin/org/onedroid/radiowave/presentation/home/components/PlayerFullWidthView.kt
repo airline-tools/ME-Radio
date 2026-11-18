@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import radiowave.composeapp.generated.resources.Res
@@ -46,7 +47,7 @@ fun PlayerFullWidthView(
         ) {
             IconButton(
                 modifier = Modifier.clip(RoundedCornerShape(100))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(Color(0xFFD8B46C))
                     .size(60.dp),
                 onClick = {
                     onVolumeDownClick()
@@ -56,7 +57,7 @@ fun PlayerFullWidthView(
                     modifier = Modifier.size(20.dp),
                     painter = painterResource(Res.drawable.ic_volume_down),
                     contentDescription = "Collapse",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = Color(0xFF142039)
                 )
             }
 
