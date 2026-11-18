@@ -81,7 +81,9 @@ fun RadioEntity.toRadio(): Radio {
         geoLat = geoLat,
         geoLong = geoLong,
         hasExtendedInfo = hasExtendedInfo,
-        frequency = state.takeIf { it.isNotBlank() && it != "None" },
+        frequency = state.takeIf {
+            it.contains("FM", ignoreCase = true) || it.contains("AM", ignoreCase = true)
+        },
         category = storedTags.firstOrNull()
     )
 }
