@@ -26,4 +26,9 @@ data class Radio(
     val category: String? = null,
     val masperoName: String? = null,
     val streamReferer: String? = null
-)
+) {
+    val playableUrl: String
+        get() = sequenceOf(url, urlResolved.orEmpty()).firstOrNull {
+            it.isNotBlank() && it != "None" && it.startsWith("http", ignoreCase = true)
+        }.orEmpty()
+}
