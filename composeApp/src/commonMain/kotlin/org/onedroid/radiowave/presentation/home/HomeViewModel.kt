@@ -29,6 +29,7 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private var observeSaveJob: Job? = null
+    private var savedStatusJob: Job? = null
     private var searchJob: Job? = null
 
     var radios by mutableStateOf<List<Radio>>(emptyList())
@@ -196,9 +197,12 @@ class HomeViewModel(
         }.launchIn(viewModelScope)
     }
 
-    private fun observeSavedStatus(radioId: String) = viewModelScope.launch {
-        radioRepository.isSaved(radioId).collect { isSaved ->
-            this@HomeViewModel.isSaved = isSaved
+    private fun observeSavedStatus(radioId: String) {
+        savedStatusJob?.cancel()
+        savedStatusJob = viewModelScope.launch {
+            radioRepository.isSaved(radioId).collect { saved ->
+                this@HomeViewModel.isSaved = saved
+            }
         }
     }
 
