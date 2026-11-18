@@ -124,6 +124,10 @@ class HomeViewModel(
             radioRepository.getMEStations()
                 .onSuccess { stations ->
                     radios = stations
+                    // Replace saved copies with refreshed catalog URLs when available.
+                    savedRadios = savedRadios.map { saved ->
+                        stations.firstOrNull { it.id == saved.id } ?: saved
+                    }
                     catalogLoaded = true
                     errorMsg = null
                     isLoading = false
