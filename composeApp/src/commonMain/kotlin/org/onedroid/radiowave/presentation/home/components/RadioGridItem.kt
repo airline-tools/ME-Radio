@@ -34,8 +34,8 @@ fun RadioGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val canTune = radio.url.isNotBlank() || !radio.masperoName.isNullOrBlank()
-    val hasUrl = radio.url.isNotBlank()
+    val canTune = radio.playableUrl.isNotBlank() || !radio.masperoName.isNullOrBlank()
+    val hasUrl = radio.playableUrl.isNotBlank()
     val gold = Color(0xFFC5A059)
     val shape = RoundedCornerShape(13.dp)
 
