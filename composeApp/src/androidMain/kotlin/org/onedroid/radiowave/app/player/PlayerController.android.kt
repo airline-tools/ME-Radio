@@ -101,7 +101,7 @@ import radiowave.composeapp.generated.resources.detecting
 import radiowave.composeapp.generated.resources.now_playing
 import radiowave.composeapp.generated.resources.unable_to_detect
 
-actual class PlayerController(context: Context) : PlayerRepository {
+actual class PlayerController(private val context: Context) : PlayerRepository {
 
     private data class PendingPlayback(
         val url: String,
