@@ -12,7 +12,8 @@ interface PlayerRepository {
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
-        onRetryClick: () -> Unit
+        onRetryClick: () -> Unit,
+        onCloseClick: () -> Unit
     )
     fun onCleared()
 }
