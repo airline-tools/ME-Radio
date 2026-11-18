@@ -172,7 +172,7 @@ class HomeViewModel(
                     if (station.playableUrl.isNotBlank()) {
                         selectedRadio = station
                         playerMessage = "تعذر تحديث الرابط؛ نجرب الرابط المحفوظ"
-                        play(station.url)
+                        play(station.playableUrl)
                     } else {
                         playerMessage = "تعذر جلب رابط البث. حاول مرة أخرى"
                     }
