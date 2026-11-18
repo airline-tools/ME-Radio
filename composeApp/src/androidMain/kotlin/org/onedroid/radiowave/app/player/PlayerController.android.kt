@@ -147,7 +147,8 @@ actual class PlayerController(context: Context) : PlayerRepository {
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
-        onRetryClick: () -> Unit
+        onRetryClick: () -> Unit,
+        onCloseClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
         LazyColumn(
@@ -155,6 +156,18 @@ actual class PlayerController(context: Context) : PlayerRepository {
                 .fillMaxSize()
                 .padding(small)
         ) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onCloseClick) {
+                        Text("‹  العودة إلى الإذاعات", color = Color(0xFFE0BD72), fontWeight = FontWeight.Bold)
+                    }
+                    Text("ME RADIO", color = Color(0xFFBFC9D8), style = MaterialTheme.typography.labelSmall)
+                }
+            }
             item {
                 radio.imgUrl?.let { imgUrl ->
                     val imagePainter = rememberAsyncImagePainter(
