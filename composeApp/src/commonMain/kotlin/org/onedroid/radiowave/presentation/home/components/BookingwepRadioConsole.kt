@@ -1,5 +1,6 @@
 package org.onedroid.radiowave.presentation.home.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -39,7 +40,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import org.onedroid.radiowave.domain.Radio
 
 private val RadioNavy = Color(0xFF0B1527)
@@ -79,7 +82,7 @@ fun BookingwepRadioConsole(
     val visibleStations = if (showFavoritesOnly) {
         stations.filter { station -> savedStations.any { it.id == station.id } }
     } else stations
-    val frequency = radio.frequency.orEmpty().substringBefore(" ").ifBlank { "---" }
+    val frequency = radio.frequency.orEmpty().substringBefore(" ").takeIf { it.isNotBlank() && it != "000" } ?: "---"
     val band = if (radio.frequency.orEmpty().contains("AM", true)) "AM" else "FM"
     val playable = radio.playableUrl.isNotBlank() || !radio.masperoName.isNullOrBlank()
 
@@ -207,17 +210,7 @@ fun BookingwepRadioConsole(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            frequency,
-                            color = RadioRed,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp,
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                shadow = Shadow(RadioRed.copy(alpha = .9f), Offset.Zero, 18f)
-                            )
-                        )
+                        SevenSegmentFrequency(frequency)
                         Spacer(Modifier.width(9.dp))
                         Surface(
                             shape = RoundedCornerShape(5.dp),
@@ -422,6 +415,78 @@ private fun RadioControl(
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1
             )
+        }
+    }
+}
+
+
+@Composable
+private fun SevenSegmentFrequency(value: String) {
+    val patterns = mapOf(
+        '0' to setOf("a", "b", "c", "d", "e", "f"),
+        '1' to setOf("b", "c"),
+        '2' to setOf("a", "b", "g", "e", "d"),
+        '3' to setOf("a", "b", "g", "c", "d"),
+        '4' to setOf("f", "g", "b", "c"),
+        '5' to setOf("a", "f", "g", "c", "d"),
+        '6' to setOf("a", "f", "g", "e", "c", "d"),
+        '7' to setOf("a", "b", "c"),
+        '8' to setOf("a", "b", "c", "d", "e", "f", "g"),
+        '9' to setOf("a", "b", "c", "d", "f", "g"),
+        '-' to setOf("g")
+    )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        value.forEach { character ->
+            if (character == '.') {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 1.dp, end = 2.dp, bottom = 5.dp)
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(RadioRed)
+                )
+            } else {
+                val activeSegments = patterns[character] ?: emptySet()
+                Canvas(modifier = Modifier.size(width = 25.dp, height = 48.dp)) {
+                    val w = size.width
+                    val h = size.height
+                    val t = w * .17f
+                    val horizontalHeight = t * .78f
+                    val verticalWidth = t * .78f
+                    val verticalHeight = (h - 3 * t) / 2
+                    val segments = listOf(
+                        Triple("a", Offset(t, 0f), Size(w - 2 * t, horizontalHeight)),
+                        Triple("g", Offset(t, (h - horizontalHeight) / 2), Size(w - 2 * t, horizontalHeight)),
+                        Triple("d", Offset(t, h - horizontalHeight), Size(w - 2 * t, horizontalHeight)),
+                        Triple("f", Offset(0f, t * .55f), Size(verticalWidth, verticalHeight)),
+                        Triple("b", Offset(w - verticalWidth, t * .55f), Size(verticalWidth, verticalHeight)),
+                        Triple("e", Offset(0f, h / 2 + t * .05f), Size(verticalWidth, verticalHeight)),
+                        Triple("c", Offset(w - verticalWidth, h / 2 + t * .05f), Size(verticalWidth, verticalHeight))
+                    )
+                    segments.forEach { (name, offset, segmentSize) ->
+                        val enabled = name in activeSegments
+                        val segmentColor = if (enabled) RadioRed else RadioRed.copy(alpha = .09f)
+                        if (enabled) {
+                            drawRoundRect(
+                                color = segmentColor.copy(alpha = .22f),
+                                topLeft = Offset(offset.x - 1f, offset.y - 1f),
+                                size = Size(segmentSize.width + 2f, segmentSize.height + 2f),
+                                cornerRadius = CornerRadius(t / 2)
+                            )
+                        }
+                        drawRoundRect(
+                            color = segmentColor,
+                            topLeft = offset,
+                            size = segmentSize,
+                            cornerRadius = CornerRadius(t / 2)
+                        )
+                    }
+                }
+            }
         }
     }
 }
