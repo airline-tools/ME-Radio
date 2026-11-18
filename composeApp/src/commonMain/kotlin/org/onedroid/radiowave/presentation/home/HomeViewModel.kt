@@ -32,6 +32,7 @@ class HomeViewModel(
     private var savedStatusJob: Job? = null
     private var searchJob: Job? = null
     private var tuneJob: Job? = null
+    private var autoSearchJob: Job? = null
 
     var radios by mutableStateOf<List<Radio>>(emptyList())
         private set
@@ -81,6 +82,9 @@ class HomeViewModel(
     var playerMessage by mutableStateOf<String?>(null)
         private set
 
+    var isAutoSearch by mutableStateOf(false)
+        private set
+
     var isSaved by mutableStateOf(true)
         private set
 
@@ -118,6 +122,7 @@ class HomeViewModel(
     }
 
     fun closePlayer() {
+        stopAutoSearch()
         tuneJob?.cancel()
         isTuning = false
         selectedRadio = null
@@ -178,6 +183,11 @@ class HomeViewModel(
     }
 
     fun selectedRadio(radio: Radio) {
+        stopAutoSearch()
+        selectStationInternal(radio)
+    }
+
+    private fun selectStationInternal(radio: Radio) {
         val station = radios.firstOrNull { it.id == radio.id } ?: radio
         // Reset immediately so the previous station's favorite state cannot
         // briefly affect the newly selected station while Room emits its value.
@@ -185,6 +195,61 @@ class HomeViewModel(
         observeSavedStatus(station.id)
         selectedRadio = station
         tuneStation(station)
+    }
+
+    fun playPrevious() = playRelativeStation(-1)
+
+    fun playNext() = playRelativeStation(1)
+
+    private fun playRelativeStation(direction: Int) {
+        val available = filteredRadios.filter {
+            it.url.isNotBlank() || !it.masperoName.isNullOrBlank()
+        }
+        if (available.isEmpty()) return
+        val currentIndex = available.indexOfFirst { it.id == selectedRadio?.id }
+        val nextIndex = if (currentIndex < 0) {
+            if (direction > 0) 0 else available.lastIndex
+        } else {
+            (currentIndex + direction + available.size) % available.size
+        }
+        selectedRadio(available[nextIndex])
+    }
+
+    fun toggleAutoSearch() {
+        if (isAutoSearch) {
+            stopAutoSearch()
+            return
+        }
+
+        val available = filteredRadios.filter {
+            it.url.isNotBlank() || !it.masperoName.isNullOrBlank()
+        }
+        if (available.isEmpty()) return
+
+        isAutoSearch = true
+        autoSearchJob = viewModelScope.launch {
+            var index = available.indexOfFirst { it.id == selectedRadio?.id }
+                .let { if (it < 0) 0 else it }
+            while (isAutoSearch) {
+                selectStationInternal(available[index % available.size])
+                delay(10_000)
+                index++
+            }
+        }
+    }
+
+    private fun stopAutoSearch() {
+        isAutoSearch = false
+        autoSearchJob?.cancel()
+        autoSearchJob = null
+    }
+
+    fun toggleSavedRadio(radio: Radio) = viewModelScope.launch {
+        if (savedRadios.any { it.id == radio.id }) {
+            radioRepository.deleteFromSaved(radio.id)
+        } else {
+            radioRepository.saveRadio(radio)
+        }
     }
 
     fun getRadios() {
@@ -273,12 +338,8 @@ class HomeViewModel(
         }
     }
 
-    fun saveRadio(radio: Radio) = viewModelScope.launch {
-        if (isSaved) {
-            radioRepository.deleteFromSaved(radio.id)
-        } else {
-            radioRepository.saveRadio(radio)
-        }
+    fun saveRadio(radio: Radio) {
+        toggleSavedRadio(radio)
     }
 
     override fun onCleared() {
