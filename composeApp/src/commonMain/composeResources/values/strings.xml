@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Radio Wave</string>>
+    <string name="app_name">ME Radio</string>
 
     <!--Settings-->
     <string name="theme">Theme</string>
@@ -19,10 +19,10 @@
 
     <!--Radio-->
     <string name="search_radios">Search Radios</string>
-    <string name="trending_radios">Trending Radios</string>">
-    <string name="verified">Verified</string>">
-    <string name="latest_radios">Latest Radios</string>">
-    <string name="no_radios_found">"No Radios Found!"</string>
+    <string name="trending_radios">Trending Radios</string>
+    <string name="verified">Verified</string>
+    <string name="latest_radios">Latest Radios</string>
+    <string name="no_radios_found">No Radios Found!</string>
     <string name="online_radio_stations">Online Radio Stations</string>
     <string name="radio_cover_background">Radio Cover Background</string>
     <string name="radio_cover">Radio Cover</string>
@@ -31,7 +31,7 @@
     <string name="latest_title">latest-title</string>
     <string name="circular-progress-indicator">circular-progress-indicator</string>
     <string name="recently_updated">Recently Updated</string>
-    <string name="radio_disclaimer">Radio are coming from Radio Browser api</string>
+    <string name="radio_disclaimer">Egyptian and Arabic radio stations</string>
     <string name="retry">Retry</string>
     <string name="no_search_result">No search result</string>
     <string name="radio_details">Radio Details</string>
@@ -73,20 +73,19 @@
 
     <!--About-->
     <string name="about">About</string>
-    <string name="developer">Developed by OneDroid</string>
-    <string name="maintainer">Maintenance by Tawhid Monowar</string>
+    <string name="developer">Based on RadioWave by OneDroid</string>
+    <string name="maintainer">ME Radio</string>
     <string name="last_updated_label">Last Updated</string>
-    <string name="last_updated_date">April 2025</string>
+    <string name="last_updated_date">November 2026</string>
     <string name="contact_label">Contact</string>
     <string name="contact_email">contact.onedroid@gmail.com</string>
     <string name="github_label">Github</string>
-    <string name="github_url">https://github.com/OneDroid/RadioWave</string>
+    <string name="github_url">https://github.com/airline-tools/ME-Radio</string>
     <string name="webpage_label">Webpage</string>
-    <string name="webpage_url">https://onedroid.github.io</string>
+    <string name="webpage_url">https://github.com/airline-tools/ME-Radio</string>
     <string name="license_label">License</string>
     <string name="license_type">GPL-3.0 license</string>
     <string name="version_label">Version</string>
     <string name="version_number">1.0.0</string>
-    <string name="about_app">RadioWave is an internet radio player that provides access to a database of over 50,000 stations. It uses Radio Browser API to fetch radio stations.</string>
-
+    <string name="about_app">ME Radio brings Egyptian and Arabic radio stations together in one internet radio player. Station streams are refreshed from their maintained sources.</string>
 </resources>
