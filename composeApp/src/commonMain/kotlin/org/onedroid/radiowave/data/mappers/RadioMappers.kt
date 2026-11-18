@@ -3,7 +3,35 @@ package org.onedroid.radiowave.data.mappers
 import kotlinx.datetime.Clock
 import org.onedroid.radiowave.data.database.RadioEntity
 import org.onedroid.radiowave.data.dto.RadioSearchResponseDto
+import org.onedroid.radiowave.data.dto.MEStationDto
 import org.onedroid.radiowave.domain.Radio
+
+fun MEStationDto.toRadio(): Radio {
+    return Radio(
+        id = id,
+        name = name,
+        url = stream.orEmpty(),
+        urlResolved = stream,
+        homepage = null,
+        imgUrl = null,
+        tags = listOf(category),
+        country = "مصر",
+        state = frequency,
+        iso = "EG",
+        language = listOf("Arabic"),
+        codec = null,
+        bitrate = null,
+        hls = if (stream?.contains(".m3u8", ignoreCase = true) == true) 1 else 0,
+        voteCount = 0,
+        clickCount = 0,
+        sslError = 0,
+        geoLat = null,
+        geoLong = null,
+        hasExtendedInfo = false,
+        frequency = frequency,
+        category = category
+    )
+}
 
 fun RadioSearchResponseDto.toRadio(): Radio {
     return Radio(
@@ -31,6 +59,7 @@ fun RadioSearchResponseDto.toRadio(): Radio {
 }
 
 fun RadioEntity.toRadio(): Radio {
+    val storedTags = tags.split(",").map { it.trim() }.filter { it.isNotBlank() }
     return Radio(
         id = stationuuid,
         name = name,
@@ -38,7 +67,7 @@ fun RadioEntity.toRadio(): Radio {
         urlResolved = urlResolved,
         homepage = homepage,
         imgUrl = favicon,
-        tags = tags.split(",").map { it.trim() },
+        tags = storedTags,
         country = country,
         state = state,
         iso = countrycode,
@@ -52,6 +81,8 @@ fun RadioEntity.toRadio(): Radio {
         geoLat = geoLat,
         geoLong = geoLong,
         hasExtendedInfo = hasExtendedInfo,
+        frequency = state.takeIf { it.isNotBlank() && it != "None" },
+        category = storedTags.firstOrNull()
     )
 }
 
@@ -60,25 +91,25 @@ fun Radio.toRadioEntity(
 ): RadioEntity {
     return RadioEntity(
         stationuuid = id,
-        name = name,
-        url = url,
-        urlResolved = urlResolved ?: "None",
-        homepage = homepage ?: "None",
-        favicon = imgUrl ?: "None",
-        tags = tags?.joinToString(", ") ?: "",
-        country = country ?: "None",
-        state = state ?: "None",
-        countrycode = iso ?: "None",
-        language = language?.joinToString(", ") ?: "",
         bitrate = bitrate ?: 0,
-        hls = hls ?: 0,
         clickcount = voteCount ?: 0,
         clicktrend = clickCount ?: 0,
+        country = country ?: "None",
+        countrycode = iso ?: "None",
+        favicon = imgUrl ?: "None",
         geoLat = geoLat,
         geoLong = geoLong,
         hasExtendedInfo = hasExtendedInfo ?: false,
+        hls = hls ?: 0,
+        homepage = homepage ?: "None",
+        language = language?.joinToString(", ") ?: "",
+        name = name,
+        serveruuid = "None",
+        state = frequency ?: state ?: "None",
+        tags = category ?: tags?.joinToString(", ") ?: "",
+        url = url,
+        urlResolved = urlResolved ?: "None",
         isSaved = isSaved,
-        timeStamp = Clock.System.now().toEpochMilliseconds(),
-        serveruuid = "None"
+        timeStamp = Clock.System.now().toEpochMilliseconds()
     )
 }
