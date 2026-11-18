@@ -95,6 +95,8 @@ class RemoteRadioDataSourceImpl(
                 // parameter and no-cache headers prevent Ktor's HTTP cache from
                 // handing the player an expired JSON snapshot.
                 parameter("_refresh", Clock.System.now().toEpochMilliseconds())
+                header("User-Agent", "ME-Radio/1.0 Android Radio Player")
+                header("Accept", "application/json")
                 header("Cache-Control", "no-cache, no-store")
                 header("Pragma", "no-cache")
             }
