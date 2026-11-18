@@ -133,7 +133,6 @@ actual class PlayerController : PlayerRepository {
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
-        statusContent: @Composable () -> Unit,
         onCloseClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
@@ -161,7 +160,7 @@ actual class PlayerController : PlayerRepository {
             onStationClick = onStationClick,
             onShareClick = onShareClick,
             onWebpageClick = onWebpageClick,
-            statusContent = statusContent
+            statusContent = { NowPlayingIndicator() }
         )
     }
 
