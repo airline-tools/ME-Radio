@@ -11,6 +11,8 @@ import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER3
 import org.onedroid.radiowave.app.utils.Result
 import org.onedroid.radiowave.app.utils.USER_AGENT
 import org.onedroid.radiowave.app.utils.safeCall
+import org.onedroid.radiowave.data.dto.MEStationDto
+import org.onedroid.radiowave.data.dto.MasperoStreamDto
 import org.onedroid.radiowave.data.dto.RadioSearchResponseDto
 
 class RemoteRadioDataSourceImpl(
@@ -58,6 +60,37 @@ class RemoteRadioDataSourceImpl(
         }
     }
 
+    override suspend fun fetchMEStations(): Result<List<MEStationDto>, DataError.Remote> {
+        val catalogResult = safeCall<List<MEStationDto>> {
+            httpClient.get(ME_RADIO_CATALOG_URL)
+        }
+
+        return when (catalogResult) {
+            is Result.Error -> catalogResult
+            is Result.Success -> {
+                // Maspero URLs are signed and can expire, so refresh them from the
+                // maintained GitHub JSON whenever the station catalog is loaded.
+                val masperoResult = safeCall<List<MasperoStreamDto>> {
+                    httpClient.get(MASPERO_STREAMS_URL)
+                }
+                val liveStreams = when (masperoResult) {
+                    is Result.Success -> masperoResult.data
+                    is Result.Error -> emptyList()
+                }
+
+                Result.Success(
+                    catalogResult.data.map { station ->
+                        val liveUrl = station.masperoName
+                            ?.let { name -> liveStreams.firstOrNull { it.name == name }?.url }
+                            ?.takeIf { it.isNotBlank() }
+
+                        station.copy(stream = liveUrl ?: station.stream)
+                    }
+                )
+            }
+        }
+    }
+
     private suspend fun <T> fetchFromMirrors(
         attempt: suspend (String) -> Result<T, DataError.Remote>
     ): Result<T, DataError.Remote> {
@@ -70,5 +103,12 @@ class RemoteRadioDataSourceImpl(
         }
 
         return Result.Error(errors.lastOrNull() ?: DataError.Remote.UNKNOWN)
+    }
+
+    private companion object {
+        const val ME_RADIO_CATALOG_URL =
+            "https://raw.githubusercontent.com/airline-tools/ME-Radio/main/composeApp/src/commonMain/composeResources/files/stations.json"
+        const val MASPERO_STREAMS_URL =
+            "https://raw.githubusercontent.com/airline-tools/maspero-stream-finder/main/maspero-streams.json"
     }
 }
