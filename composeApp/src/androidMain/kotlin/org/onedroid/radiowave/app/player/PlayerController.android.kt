@@ -97,21 +97,13 @@ import radiowave.composeapp.generated.resources.unable_to_detect
 
 actual class PlayerController(context: Context) : PlayerRepository {
 
+    private val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+        .setUserAgent("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
+        .setAllowCrossProtocolRedirects(true)
+        .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
+
     private val player = ExoPlayer.Builder(context)
-        .setMediaSourceFactory(
-            DefaultMediaSourceFactory(
-                DefaultHttpDataSource.Factory()
-                    .setUserAgent("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
-                    .setAllowCrossProtocolRedirects(true)
-                    .setDefaultRequestProperties(
-                        mapOf(
-                            "Referer" to "https://www.maspero.eg/",
-                            "Origin" to "https://www.maspero.eg",
-                            "Accept" to "*/*"
-                        )
-                    )
-            )
-        )
+        .setMediaSourceFactory(DefaultMediaSourceFactory(httpDataSourceFactory))
         .build()
         .apply {
             // Respect other audio apps and pause safely when headphones are unplugged.
@@ -248,7 +240,18 @@ actual class PlayerController(context: Context) : PlayerRepository {
         }
     }
 
-    override fun play(audioUrl: String) {
+    override fun play(audioUrl: String, referer: String?) {
+        // Maspero's CDN uses short-lived signed HLS URLs. Send the exact source
+        // page as Referer instead of a generic homepage, and refresh it per tune.
+        val sourceReferer = referer?.takeIf { it.startsWith("https://") }
+            ?: "https://www.maspero.eg/"
+        httpDataSourceFactory.setDefaultRequestProperties(
+            mapOf(
+                "Referer" to sourceReferer,
+                "Origin" to "https://www.maspero.eg",
+                "Accept" to "*/*"
+            )
+        )
         player.clearMediaItems()
         val mediaItem = MediaItem.fromUri(audioUrl)
         player.setMediaItem(mediaItem)
