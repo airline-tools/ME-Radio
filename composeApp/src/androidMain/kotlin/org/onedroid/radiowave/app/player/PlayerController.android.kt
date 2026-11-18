@@ -1,9 +1,13 @@
 package org.onedroid.radiowave.app.player
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Intent
 import android.content.Context
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -62,13 +66,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.C
 import androidx.media3.common.AudioAttributes
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import coil3.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +83,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.Executor
 import org.jetbrains.compose.resources.stringResource
 import org.onedroid.radiowave.R
 import org.onedroid.radiowave.app.theme.small
@@ -98,25 +103,20 @@ import radiowave.composeapp.generated.resources.unable_to_detect
 
 actual class PlayerController(context: Context) : PlayerRepository {
 
-    private val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-        .setUserAgent("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
-        .setAllowCrossProtocolRedirects(true)
-        .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
+    private data class PendingPlayback(
+        val url: String,
+        val referer: String?,
+        val stationName: String?
+    )
 
-    private val player = ExoPlayer.Builder(context)
-        .setMediaSourceFactory(DefaultMediaSourceFactory(httpDataSourceFactory))
-        .build()
-        .apply {
-            // Respect other audio apps and pause safely when headphones are unplugged.
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                    .build(),
-                true
-            )
-            setHandleAudioBecomingNoisy(true)
-        }
+    // The actual ExoPlayer lives in RadioPlaybackService. This controller is
+    // only the UI connection and can be released without stopping the audio.
+    private var player: MediaController? = null
+    private var playerFuture: ListenableFuture<MediaController>? = null
+    private var pendingPlayback: PendingPlayback? = null
+    private val mainExecutor = Executor { command ->
+        Handler(Looper.getMainLooper()).post(command)
+    }
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -188,35 +188,97 @@ actual class PlayerController(context: Context) : PlayerRepository {
         )
     }
 
-    override fun play(audioUrl: String, referer: String?) {
-        // Maspero's CDN uses short-lived signed HLS URLs. Send the exact source
-        // page as Referer instead of a generic homepage, and refresh it per tune.
-        val sourceReferer = referer?.takeIf { it.startsWith("https://") }
-        val requestHeaders = if (sourceReferer != null) {
-            mapOf(
-                "Referer" to sourceReferer,
-                "Origin" to "https://www.maspero.eg",
-                "Accept" to "*/*"
-            )
-        } else {
-            // Do not send Maspero's referrer to unrelated stations; some radio
-            // providers reject requests carrying another station's Origin.
-            mapOf("Accept" to "*/*")
-        }
-        httpDataSourceFactory.setDefaultRequestProperties(requestHeaders)
-        player.clearMediaItems()
-        val mediaItem = MediaItem.fromUri(audioUrl)
-        player.setMediaItem(mediaItem)
+    override fun play(audioUrl: String, referer: String?, stationName: String?) {
+        if (audioUrl.isBlank()) return
+        pendingPlayback = PendingPlayback(audioUrl, referer, stationName)
         _metadataState.value = MetadataState.Detecting
-        player.prepare()
-        player.play()
+
+        val connectedPlayer = player
+        if (connectedPlayer != null) {
+            pendingPlayback = null
+            startPlayback(connectedPlayer, audioUrl, referer, stationName)
+        } else {
+            connectToPlaybackService()
+        }
+    }
+
+    private fun connectToPlaybackService() {
+        if (player != null || playerFuture != null) return
+
+        try {
+            // This is invoked only after the user selects Play, while the app
+            // is visible. MediaSessionService promotes itself for playback.
+            context.startService(Intent(context, RadioPlaybackService::class.java))
+
+            val token = SessionToken(
+                context,
+                ComponentName(context, RadioPlaybackService::class.java)
+            )
+            val future = MediaController.Builder(context, token).buildAsync()
+            playerFuture = future
+
+            future.addListener({
+                try {
+                    val connected = future.get()
+                    player = connected
+                    connected.addListener(playerListener)
+                    _isPlaying.value = connected.isPlaying
+                    _currentPosition.value = connected.currentPosition
+
+                    val pending = pendingPlayback
+                    if (pending != null) {
+                        pendingPlayback = null
+                        startPlayback(
+                            connected,
+                            pending.url,
+                            pending.referer,
+                            pending.stationName
+                        )
+                    }
+                } catch (_: Exception) {
+                    playerFuture = null
+                    _isPlaying.value = false
+                }
+            }, mainExecutor)
+        } catch (_: Exception) {
+            playerFuture = null
+            _isPlaying.value = false
+        }
+    }
+
+    private fun startPlayback(
+        connectedPlayer: MediaController,
+        audioUrl: String,
+        referer: String?,
+        stationName: String?
+    ) {
+        // The service's data-source factory reads this value when it creates
+        // the next stream request, preserving Maspero's Referer behavior.
+        RadioPlaybackConfig.referer = referer?.takeIf { it.startsWith("https://") }
+
+        val mediaItem = MediaItem.Builder()
+            .setUri(audioUrl)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(stationName?.takeIf { it.isNotBlank() } ?: "ME Radio")
+                    .setArtist("ME Radio")
+                    .build()
+            )
+            .build()
+
+        connectedPlayer.clearMediaItems()
+        connectedPlayer.setMediaItem(mediaItem)
+        _metadataState.value = MetadataState.Detecting
+        connectedPlayer.prepare()
+        connectedPlayer.play()
     }
 
     private fun pauseResume() {
-        if (player.isPlaying) {
-            player.pause()
+        val connectedPlayer = player ?: return
+        if (connectedPlayer.isPlaying) {
+            connectedPlayer.pause()
         } else {
-            player.play()
+            connectedPlayer.play()
         }
         vibrateDevice()
     }
@@ -225,63 +287,64 @@ actual class PlayerController(context: Context) : PlayerRepository {
         positionUpdateJob?.cancel()
         positionUpdateJob = coroutineScope.launch {
             while (isActive) {
-                if (player.isPlaying) {
-                    _currentPosition.value = player.currentPosition
+                val connectedPlayer = player
+                if (connectedPlayer?.isPlaying == true) {
+                    _currentPosition.value = connectedPlayer.currentPosition
                 }
                 delay(50L)
             }
         }
     }
 
-    init {
-        player.addListener(object : Player.Listener {
-            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                metadataTimeoutJob?.cancel()
+    private val playerListener = object : Player.Listener {
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            metadataTimeoutJob?.cancel()
 
-                val artist = mediaMetadata.artist?.toString() ?: ""
-                val title = mediaMetadata.title?.toString() ?: ""
+            val artist = mediaMetadata.artist?.toString() ?: ""
+            val title = mediaMetadata.title?.toString() ?: ""
 
-                if (title.isNotEmpty()) {
-                    val content = if (artist.isNotEmpty()) "$artist - $title" else title
-                    _metadataState.value = MetadataState.Available(content)
-                }
+            if (title.isNotEmpty()) {
+                val content = if (artist.isNotEmpty()) "$artist - $title" else title
+                _metadataState.value = MetadataState.Available(content)
             }
+        }
 
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_IDLE, Player.STATE_ENDED -> {
-                        metadataTimeoutJob?.cancel()
-                        _metadataState.value = MetadataState.NotAvailable
-                    }
-
-                    Player.STATE_READY -> {
-                        if (_metadataState.value is MetadataState.Detecting) {
-                            startMetadataTimeout()
-                        }
-                    }
-
-                    Player.STATE_BUFFERING -> {
-                        _metadataState.value = MetadataState.Detecting
-                    }
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_IDLE, Player.STATE_ENDED -> {
+                    metadataTimeoutJob?.cancel()
+                    _metadataState.value = MetadataState.NotAvailable
                 }
-            }
 
-            override fun onIsPlayingChanged(isNowPlaying: Boolean) {
-                _isPlaying.value = isNowPlaying
-                if (isNowPlaying) {
-                    if (_metadataState.value is MetadataState.Detecting &&
-                        (metadataTimeoutJob == null || metadataTimeoutJob?.isCompleted == true)
-                    ) {
+                Player.STATE_READY -> {
+                    if (_metadataState.value is MetadataState.Detecting) {
                         startMetadataTimeout()
                     }
+                }
 
-                    if (positionUpdateJob?.isActive != true) {
-                        startPositionTracking()
-                    }
+                Player.STATE_BUFFERING -> {
+                    _metadataState.value = MetadataState.Detecting
                 }
             }
-        })
+        }
 
+        override fun onIsPlayingChanged(isNowPlaying: Boolean) {
+            _isPlaying.value = isNowPlaying
+            if (isNowPlaying) {
+                if (_metadataState.value is MetadataState.Detecting &&
+                    (metadataTimeoutJob == null || metadataTimeoutJob?.isCompleted == true)
+                ) {
+                    startMetadataTimeout()
+                }
+
+                if (positionUpdateJob?.isActive != true) {
+                    startPositionTracking()
+                }
+            }
+        }
+    }
+
+    init {
         startPositionTracking()
     }
 
@@ -369,7 +432,7 @@ actual class PlayerController(context: Context) : PlayerRepository {
     @Composable
     private fun PlayerStatusIndicator(onRetryClick: () -> Unit) {
 
-        val playbackState = remember { mutableIntStateOf(player.playbackState) }
+        val playbackState = remember { mutableIntStateOf(player?.playbackState ?: Player.STATE_IDLE) }
         val hasError = remember { mutableStateOf(false) }
         val currentVolumeState = remember { mutableIntStateOf(getCurrentVolume()) }
         val position by currentPosition.collectAsState()
@@ -383,6 +446,7 @@ actual class PlayerController(context: Context) : PlayerRepository {
         }
 
         DisposableEffect(player) {
+            val connectedPlayer = player
             val listener = object : Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     playbackState.intValue = state
@@ -396,8 +460,8 @@ actual class PlayerController(context: Context) : PlayerRepository {
                 }
             }
 
-            player.addListener(listener)
-            onDispose { player.removeListener(listener) }
+            connectedPlayer?.addListener(listener)
+            onDispose { connectedPlayer?.removeListener(listener) }
         }
 
         val animatedVolumePercent by animateFloatAsState(
@@ -519,7 +583,8 @@ actual class PlayerController(context: Context) : PlayerRepository {
         metadataTimeoutJob?.cancel()
         positionUpdateJob?.cancel()
         coroutineScope.cancel()
-        player.release()
+        // The MediaSessionService owns ExoPlayer. Releasing this UI controller
+        // must never stop a stream that is playing with the screen locked.
     }
 }
 
