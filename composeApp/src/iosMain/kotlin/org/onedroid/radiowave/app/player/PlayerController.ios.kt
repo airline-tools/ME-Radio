@@ -81,7 +81,7 @@ actual class PlayerController : PlayerRepository {
     private val isPlaying = _isPlaying.asStateFlow()
     private val currentPosition = _currentPosition.asStateFlow()
 
-    override fun play(audioUrl: String, referer: String?) {
+    override fun play(audioUrl: String, referer: String?, stationName: String?) {
         val url = NSURL(string = audioUrl)
         val item = AVPlayerItem(uRL = url)
         player.replaceCurrentItemWithPlayerItem(item)
