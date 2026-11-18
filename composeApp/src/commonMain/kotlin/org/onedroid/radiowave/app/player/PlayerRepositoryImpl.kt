@@ -6,14 +6,27 @@ import org.onedroid.radiowave.domain.Radio
 class PlayerRepositoryImpl(
     private val playerController: PlayerController
 ) : PlayerRepository {
-    override fun play(audioUrl: String) {
-        playerController.play(audioUrl)
+    override fun play(audioUrl: String, referer: String?) {
+        playerController.play(audioUrl, referer)
     }
 
     @Composable
     override fun PLayerUI(
         radio: Radio,
+        stations: List<Radio>,
+        savedStations: List<Radio>,
+        categories: List<String>,
+        selectedCategory: String,
         isSaved: Boolean,
+        isTuning: Boolean,
+        playerMessage: String?,
+        isAutoSearch: Boolean,
+        onCategoryClick: (String) -> Unit,
+        onStationClick: (Radio) -> Unit,
+        onStationFavoriteClick: (Radio) -> Unit,
+        onPreviousClick: () -> Unit,
+        onNextClick: () -> Unit,
+        onAutoSearchClick: () -> Unit,
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
@@ -22,7 +35,20 @@ class PlayerRepositoryImpl(
     ) {
         playerController.PLayerUI(
             radio = radio,
+            stations = stations,
+            savedStations = savedStations,
+            categories = categories,
+            selectedCategory = selectedCategory,
             isSaved = isSaved,
+            isTuning = isTuning,
+            playerMessage = playerMessage,
+            isAutoSearch = isAutoSearch,
+            onCategoryClick = onCategoryClick,
+            onStationClick = onStationClick,
+            onStationFavoriteClick = onStationFavoriteClick,
+            onPreviousClick = onPreviousClick,
+            onNextClick = onNextClick,
+            onAutoSearchClick = onAutoSearchClick,
             onSaveClick = onSaveClick,
             onWebpageClick = onWebpageClick,
             onShareClick = onShareClick,
