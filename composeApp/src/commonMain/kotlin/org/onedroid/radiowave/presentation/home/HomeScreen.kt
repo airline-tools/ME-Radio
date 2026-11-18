@@ -165,8 +165,12 @@ fun HomeScreen(
             if (viewModel.savedRadios != emptyList<Radio>()) {
                 title(contentType = "Saved-title") {
                     FeedTitle(
-                        title = "Saved Radios",
-                        onClick = { }
+                        title = "المحطات المفضلة",
+                        onClick = { },
+                        titleStyle = MaterialTheme.typography.titleSmall.copy(
+                            color = Color(0xFFE2BF76),
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
 
@@ -213,7 +217,13 @@ fun HomeScreen(
                         FilterChip(
                             selected = viewModel.selectedCategory == category,
                             onClick = { viewModel.selectCategory(category) },
-                            label = { Text(category) }
+                            label = { Text(category) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color(0xFF17263B),
+                                labelColor = Color(0xFFD8E0EA),
+                                selectedContainerColor = Color(0xFFD0AC65),
+                                selectedLabelColor = Color(0xFF101827)
+                            )
                         )
                     }
                 }
