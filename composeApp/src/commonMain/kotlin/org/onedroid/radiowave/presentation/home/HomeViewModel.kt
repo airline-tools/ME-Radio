@@ -141,7 +141,7 @@ class HomeViewModel(
 
         if (station.masperoName.isNullOrBlank() && !forceRefresh) {
             selectedRadio = station
-            play(station.url)
+            play(station.playableUrl)
             return
         }
 
@@ -151,17 +151,17 @@ class HomeViewModel(
             radioRepository.getMEStations()
                 .onSuccess { stations ->
                     val fresh = stations.firstOrNull { it.id == station.id }
-                    if (fresh != null && fresh.url.isNotBlank()) {
+                    if (fresh != null && fresh.playableUrl.isNotBlank()) {
                         radios = radios.map { if (it.id == fresh.id) fresh else it }
                         selectedRadio = fresh
                         playerMessage = null
-                        play(fresh.url)
-                    } else if (station.url.isNotBlank()) {
+                        play(fresh.playableUrl)
+                    } else if (station.playableUrl.isNotBlank()) {
                         // Keep a previously working URL as a fallback, but do not
                         // label the station unavailable just because refresh failed.
                         selectedRadio = station
                         playerMessage = "تعذر تحديث الرابط؛ نجرب الرابط المحفوظ"
-                        play(station.url)
+                        play(station.playableUrl)
                     } else {
                         playerMessage = "رابط البث غير متاح حاليًا"
                     }
@@ -205,7 +205,7 @@ class HomeViewModel(
 
     private fun playRelativeStation(direction: Int) {
         val available = filteredRadios.filter {
-            it.url.isNotBlank() || !it.masperoName.isNullOrBlank()
+            it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
         }
         if (available.isEmpty()) return
         val currentIndex = available.indexOfFirst { it.id == selectedRadio?.id }
@@ -267,9 +267,9 @@ class HomeViewModel(
                     val savedById = savedSnapshot.associateBy { it.id }
 
                     val mergedStations = stations.map { station ->
-                        val savedUrl = savedById[station.id]?.url
+                        val savedUrl = savedById[station.id]?.playableUrl
                             ?.takeIf { it.isNotBlank() }
-                        val selectedUrl = station.url.takeIf { it.isNotBlank() }
+                        val selectedUrl = station.playableUrl.takeIf { it.isNotBlank() }
                             ?: savedUrl
 
                         station.copy(
@@ -285,8 +285,8 @@ class HomeViewModel(
                     savedSnapshot.forEach { saved ->
                         val refreshed = mergedStations.firstOrNull { it.id == saved.id }
                         if (refreshed != null &&
-                            refreshed.url.isNotBlank() &&
-                            refreshed.url != saved.url
+                            refreshed.playableUrl.isNotBlank() &&
+                            refreshed.playableUrl != saved.playableUrl
                         ) {
                             radioRepository.saveRadio(refreshed)
                         }
