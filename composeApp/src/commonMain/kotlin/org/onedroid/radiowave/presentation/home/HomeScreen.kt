@@ -149,151 +149,17 @@ fun HomeScreen(
             }
         },
         sheetPeekHeight = if (viewModel.selectedRadio != null) BottomSheetDefaults.SheetPeekHeight else 0.dp,
-        topBar = {
-            HomeTopAppBar(
-                rootNavController = rootNavController,
-                isSearchActive = viewModel.isSearchActive,
-                onAboutClick = viewModel::toggleAboutDialog,
-                toggleSearch = viewModel::toggleSearch,
-                searchQuery = viewModel.searchQuery,
-                updateSearchQuery = viewModel::updateSearchQuery,
-                scrollBehavior = scrollBehavior,
-                searchResultContent = {
-                    RadioSearchResult(
-                        isSearchLoading = viewModel.isSearchLoading,
-                        searchErrorMsg = viewModel.searchErrorMsg,
-                        searchResult = viewModel.searchResult,
-                        onRadioClick = {
-                            viewModel.toggleSearch()
-                            scope.launch { delay(1000) }
-                            viewModel.selectedRadio(it)
-                            scope.launch { bottomSheetState.bottomSheetState.expand() }
-                        }
-                    )
-                }
-            )
-        }
-    ) { contentPadding ->
-        Feed(
+        topBar = { }
+    ) {
+        // Keep the original catalogue UI out of the first frame. The radio
+        // console is the app's landing screen; show only a dark loading surface
+        // until the station catalogue selects its initial station.
+        Box(
             modifier = Modifier.fillMaxSize().background(Color(0xFF081321)),
-            columns = GridCells.Fixed(1),
-            state = gridState,
-            contentPadding = contentPadding,
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            horizontalArrangement = Arrangement.spacedBy(0.dp)
+            contentAlignment = Alignment.Center
         ) {
-
-            if (viewModel.savedRadios != emptyList<Radio>()) {
-                title(contentType = "Saved-title") {
-                    FeedTitle(
-                        title = "المحطات المفضلة",
-                        onClick = { },
-                        titleStyle = MaterialTheme.typography.titleSmall.copy(
-                            color = Color(0xFFE2BF76),
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-
-                row(contentType = "verified-shimmer-effect") {
-                    RadioHorizontalGridItem(
-                        radios = viewModel.savedRadios,
-                        onRadioClick = {
-                            viewModel.selectedRadio(it)
-                            scope.launch { bottomSheetState.bottomSheetState.expand() }
-                            }
-                    )
-                }
-            }
-
-            single {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF1E3859), Color(0xFF0D1A2D), Color(0xFF29243D))
-                            )
-                        )
-                        .padding(20.dp)
-                ) {
-                    Text("BOOKINGWEP RADIO", color = Color(0xFFE2BF76), style = MaterialTheme.typography.labelLarge, letterSpacing = 2.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("الراديو", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text("ترددات مصرية • بث مباشر • محطاتك المفضلة", color = Color(0xFFCAD3DF), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            single {
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = extraSmall, vertical = small),
-                    horizontalArrangement = Arrangement.spacedBy(extraSmall)
-                ) {
-                    viewModel.categories.forEach { category ->
-                        FilterChip(
-                            selected = viewModel.selectedCategory == category,
-                            onClick = { viewModel.selectCategory(category) },
-                            label = { Text(category) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color(0xFF17263B),
-                                labelColor = Color(0xFFD8E0EA),
-                                selectedContainerColor = Color(0xFFD0AC65),
-                                selectedLabelColor = Color(0xFF101827)
-                            )
-                        )
-                    }
-                }
-            }
-
-            title(contentType = "latest-title") {
-                FeedTitle(
-                    title = "إذاعات مصر",
-                    titleStyle = MaterialTheme.typography.titleMedium.copy(
-                        color = Color(0xFFE2BF76),
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-
-            items(
-                count = radiosSize,
-                key = { uniqueRadios[it].id }
-            ) { index ->
-                val radio = uniqueRadios[index]
-                RadioGridItem(
-                    radio = radio,
-                    onClick = {
-                        viewModel.selectedRadio(radio)
-                        scope.launch { bottomSheetState.bottomSheetState.expand() }
-                    }
-                )
-            }
-
-            if (viewModel.errorMsg != null) {
-                single {
-                    ErrorMsgView(
-                        errorMsg = viewModel.errorMsg!!,
-                        onRetryClick = {
-                            viewModel.getRadios()
-                        }
-                    )
-                }
-            }
-            if (viewModel.isLoading) {
-                single {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.padding(extraSmall)
-                        )
-                    }
-                }
+            if (viewModel.selectedRadio == null) {
+                CircularProgressIndicator(color = Color(0xFFC5A059))
             }
         }
     }
