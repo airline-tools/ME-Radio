@@ -150,12 +150,26 @@ class HomeViewModel(
         tuneJob = viewModelScope.launch {
             radioRepository.getMEStations()
                 .onSuccess { stations ->
-                    val fresh = stations.firstOrNull { it.id == station.id }
+                    // Maspero IDs differ from the app catalog; match by Maspero name.
+                    val expectedName = station.masperoName?.let(::normalizeStationName)
+                    val fresh = stations.firstOrNull { candidate ->
+                        candidate.id == station.id ||
+                            (!expectedName.isNullOrBlank() &&
+                                normalizeStationName(candidate.name) == expectedName)
+                    }
                     if (fresh != null && fresh.playableUrl.isNotBlank()) {
-                        radios = radios.map { if (it.id == fresh.id) fresh else it }
-                        selectedRadio = fresh
+                        val updated = station.copy(
+                            url = fresh.playableUrl,
+                            urlResolved = fresh.playableUrl,
+                            homepage = fresh.homepage ?: station.homepage,
+                            streamReferer = fresh.streamReferer ?: station.streamReferer
+                        )
+                        radios = radios.map { current ->
+                            if (current.id == station.id) updated else current
+                        }
+                        selectedRadio = updated
                         playerMessage = null
-                        play(fresh.playableUrl)
+                        play(updated.playableUrl)
                     } else if (station.playableUrl.isNotBlank()) {
                         // Keep a previously working URL as a fallback, but do not
                         // label the station unavailable just because refresh failed.
@@ -179,6 +193,12 @@ class HomeViewModel(
                 }
         }
     }
+
+    private fun normalizeStationName(value: String): String = value.trim()
+        .replace("ـ", "")
+        .replace(Regex("[\u064B-\u065F\u0670]"), "")
+        .replace(Regex("\s+"), "")
+        .lowercase()
 
     fun updateSearchQuery(query: String) {
         searchQuery = query
@@ -279,6 +299,9 @@ class HomeViewModel(
                     }
 
                     radios = mergedStations
+                    // Select a station for the digital console on first launch;
+                    // audio remains stopped until the user presses Play.
+                    if (selectedRadio == null) selectedRadio = mergedStations.firstOrNull()
 
                     // Persist only valid refreshed URLs. Never replace a working
                     // saved stream with a blank URL if the Maspero feed is unavailable.
