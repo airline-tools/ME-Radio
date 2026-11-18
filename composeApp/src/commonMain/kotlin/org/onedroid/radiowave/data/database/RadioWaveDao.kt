@@ -22,7 +22,7 @@ interface RadioWaveDao {
     @Query("DELETE FROM RadioEntity WHERE stationuuid = :id AND isSaved = 1")
     suspend fun deleteSavedRadio(id: String)
 
-    @Query("SELECT isSaved FROM RadioEntity WHERE stationuuid = :id")
+    @Query("SELECT EXISTS(SELECT 1 FROM RadioEntity WHERE stationuuid = :id AND isSaved = 1)")
     fun isSaved(id: String): Flow<Boolean>
 
     @Query("DELETE FROM RadioEntity")
