@@ -194,14 +194,18 @@ actual class PlayerController(context: Context) : PlayerRepository {
         // Maspero's CDN uses short-lived signed HLS URLs. Send the exact source
         // page as Referer instead of a generic homepage, and refresh it per tune.
         val sourceReferer = referer?.takeIf { it.startsWith("https://") }
-            ?: "https://www.maspero.eg/"
-        httpDataSourceFactory.setDefaultRequestProperties(
+        val requestHeaders = if (sourceReferer != null) {
             mapOf(
                 "Referer" to sourceReferer,
                 "Origin" to "https://www.maspero.eg",
                 "Accept" to "*/*"
             )
-        )
+        } else {
+            // Do not send Maspero's referrer to unrelated stations; some radio
+            // providers reject requests carrying another station's Origin.
+            mapOf("Accept" to "*/*")
+        }
+        httpDataSourceFactory.setDefaultRequestProperties(requestHeaders)
         player.clearMediaItems()
         val mediaItem = MediaItem.fromUri(audioUrl)
         player.setMediaItem(mediaItem)
