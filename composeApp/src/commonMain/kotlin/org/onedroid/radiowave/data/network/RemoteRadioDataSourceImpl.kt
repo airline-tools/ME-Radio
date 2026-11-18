@@ -21,6 +21,7 @@ import radiowave.composeapp.generated.resources.Res
 
 class RemoteRadioDataSourceImpl(
     private val httpClient: HttpClient,
+    private val appPreferences: org.onedroid.radiowave.app.utils.AppPreferences,
 ) : RemoteRadioDataSource {
 
     private val radioBrowserBaseUrls = listOf(
@@ -66,26 +67,51 @@ class RemoteRadioDataSourceImpl(
 
     @OptIn(ExperimentalResourceApi::class)
     override suspend fun fetchMEStations(): Result<List<MEStationDto>, DataError.Remote> {
-        // Always prefer the latest catalog from GitHub, but keep the bundled
-        // resource as an offline fallback so the station list still opens
-        // without a network connection.
-        val remoteCatalog = safeCall<List<MEStationDto>> {
-            httpClient.get(ME_RADIO_CATALOG_URL)
-        }
-
-        val catalog = when (remoteCatalog) {
-            is Result.Success -> remoteCatalog.data
-            is Result.Error -> {
-                try {
-                    Json { ignoreUnknownKeys = true }
-                        .decodeFromString<List<MEStationDto>>(
-                            Res.readBytes("files/stations.json").decodeToString()
-                        )
-                } catch (_: Exception) {
-                    return remoteCatalog
-                }
+        // GitHub is the source of truth. Add a cache-busting query and
+        // no-cache headers so edits to stations.json are visible immediately.
+        val remoteCatalog = safeCall<String> {
+            httpClient.get(ME_RADIO_CATALOG_URL) {
+                parameter("_refresh", Clock.System.now().toEpochMilliseconds())
+                header("Accept", "application/json, text/plain, */*")
+                header("Cache-Control", "no-cache, no-store")
+                header("Pragma", "no-cache")
             }
         }
+
+        val json = Json { ignoreUnknownKeys = true }
+        val remoteText = (remoteCatalog as? Result.Success)?.data
+        val remoteStations = remoteText?.let { text ->
+            try {
+                json.decodeFromString<List<MEStationDto>>(text)
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        // Save only a successfully decoded remote catalog. If GitHub is
+        // unavailable or returns invalid JSON, use the last valid local copy.
+        if (remoteStations != null && remoteText != null) {
+            appPreferences.saveCachedStationCatalog(remoteText)
+        }
+
+        val catalog = remoteStations
+            ?: appPreferences.getCachedStationCatalog()?.let { cached ->
+                try {
+                    json.decodeFromString<List<MEStationDto>>(cached)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            ?: try {
+                json.decodeFromString<List<MEStationDto>>(
+                    Res.readBytes("files/stations.json").decodeToString()
+                )
+            } catch (_: Exception) {
+                return when (remoteCatalog) {
+                    is Result.Error -> remoteCatalog
+                    is Result.Success -> Result.Error(DataError.Remote.UNKNOWN)
+                }
+            }
 
         // Maspero URLs are signed and may expire. Refresh them when online;
         // when offline, retain any stream URL already present in the catalog.
