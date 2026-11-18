@@ -136,6 +136,7 @@ class HomeViewModel(
 
     private fun tuneStation(station: Radio, forceRefresh: Boolean = false) {
         tuneJob?.cancel()
+        isTuning = false
         playerMessage = null
 
         if (station.masperoName.isNullOrBlank() && !forceRefresh) {
