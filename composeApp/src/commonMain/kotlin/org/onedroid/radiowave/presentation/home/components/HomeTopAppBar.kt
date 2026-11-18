@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -35,6 +36,12 @@ fun HomeTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color(0xFF081321),
+            titleContentColor = Color(0xFFF5F0E6),
+            navigationIconContentColor = Color(0xFFD8B46C),
+            actionIconContentColor = Color(0xFFD8B46C)
+        ),
         title = {
             Text(
                 text = stringResource(Res.string.app_name),
