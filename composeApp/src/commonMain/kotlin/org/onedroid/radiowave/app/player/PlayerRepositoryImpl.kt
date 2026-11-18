@@ -16,14 +16,16 @@ class PlayerRepositoryImpl(
         isSaved: Boolean,
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
-        onShareClick: () -> Unit
+        onShareClick: () -> Unit,
+        onRetryClick: () -> Unit
     ) {
         playerController.PLayerUI(
             radio = radio,
             isSaved = isSaved,
             onSaveClick = onSaveClick,
             onWebpageClick = onWebpageClick,
-            onShareClick = onShareClick
+            onShareClick = onShareClick,
+            onRetryClick = onRetryClick
         )
     }
 
