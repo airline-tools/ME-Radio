@@ -37,3 +37,4 @@ class AppPreferences(
             preferences[stationCatalogKey] = json
         }
     }
+}
