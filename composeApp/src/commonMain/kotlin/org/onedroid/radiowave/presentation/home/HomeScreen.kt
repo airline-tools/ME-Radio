@@ -212,11 +212,11 @@ fun HomeScreen(
                         )
                         .padding(20.dp)
                 ) {
-                    Text("ME RADIO", color = Color(0xFFE2BF76), style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp)
+                    Text("BOOKINGWEP RADIO", color = Color(0xFFE2BF76), style = MaterialTheme.typography.labelLarge, letterSpacing = 2.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("صوت مصر في مكان واحد", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("الراديو", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(5.dp))
-                    Text("إذاعات مصرية • بث مباشر • محطاتك المفضلة", color = Color(0xFFCAD3DF), style = MaterialTheme.typography.bodySmall)
+                    Text("ترددات مصرية • بث مباشر • محطاتك المفضلة", color = Color(0xFFCAD3DF), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
