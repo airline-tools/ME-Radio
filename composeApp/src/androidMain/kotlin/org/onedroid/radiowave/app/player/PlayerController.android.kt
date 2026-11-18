@@ -176,8 +176,6 @@ actual class PlayerController(context: Context) : PlayerRepository {
             onCategoryClick = onCategoryClick,
             onCloseClick = onCloseClick,
             onPlayPauseClick = { pauseResume() },
-            onVolumeUpClick = { volumeUp() },
-            onVolumeDownClick = { volumeDown() },
             onPreviousClick = onPreviousClick,
             onNextClick = onNextClick,
             onAutoSearchClick = onAutoSearchClick,
