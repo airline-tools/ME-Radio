@@ -116,6 +116,9 @@ class HomeViewModel(
 
     fun selectedRadio(radio: Radio) {
         if (radio.url.isBlank()) return
+        // Reset immediately so the previous station's favorite state cannot
+        // briefly affect the newly selected station while Room emits its value.
+        isSaved = false
         observeSavedStatus(radio.id)
         selectedRadio = radio
     }
