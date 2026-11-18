@@ -72,7 +72,8 @@ fun BookingwepRadioConsole(
     onStationFavoriteClick: (Radio) -> Unit,
     onStationClick: (Radio) -> Unit,
     onShareClick: () -> Unit,
-    onWebpageClick: () -> Unit
+    onWebpageClick: () -> Unit,
+    statusContent: @Composable () -> Unit
 ) {
     var showFavoritesOnly by remember { mutableStateOf(false) }
     val visibleStations = if (showFavoritesOnly) {
@@ -264,6 +265,10 @@ fun BookingwepRadioConsole(
                 }
             }
 
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 5.dp)) {
+                statusContent()
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -323,7 +328,7 @@ fun BookingwepRadioConsole(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp)
         ) {
             items(visibleStations, key = { it.id }) { station ->
                 val isStationSaved = savedStations.any { it.id == station.id }
