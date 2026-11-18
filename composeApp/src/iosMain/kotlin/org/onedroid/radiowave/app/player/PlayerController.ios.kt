@@ -15,11 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import coil3.compose.rememberAsyncImagePainter
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -114,7 +117,9 @@ actual class PlayerController : PlayerRepository {
         isSaved: Boolean,
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
-        onShareClick: () -> Unit
+        onShareClick: () -> Unit,
+        onRetryClick: () -> Unit,
+        onCloseClick: () -> Unit
     ) {
         // Use `isPlaying.collectAsState()` and `metadataState.collectAsState()` here
         val isPlayingState by isPlaying.collectAsState()
@@ -123,6 +128,18 @@ actual class PlayerController : PlayerRepository {
                 .fillMaxSize()
                 .padding(small)
         ) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onCloseClick) {
+                        Text("‹  العودة إلى الإذاعات", color = Color(0xFFE0BD72), fontWeight = FontWeight.Bold)
+                    }
+                    Text("ME RADIO", color = Color(0xFFBFC9D8), style = MaterialTheme.typography.labelSmall)
+                }
+            }
             item {
                 radio.imgUrl?.let { imgUrl ->
                     val imagePainter = rememberAsyncImagePainter(
