@@ -111,7 +111,20 @@ fun HomeScreen(
             viewModel.selectedRadio?.let {
                 viewModel.playerRepository.PLayerUI(
                     radio = it,
+                    stations = viewModel.filteredRadios,
+                    savedStations = viewModel.savedRadios,
+                    categories = viewModel.categories,
+                    selectedCategory = viewModel.selectedCategory,
                     isSaved = viewModel.isSaved,
+                    isTuning = viewModel.isTuning,
+                    playerMessage = viewModel.playerMessage,
+                    isAutoSearch = viewModel.isAutoSearch,
+                    onCategoryClick = viewModel::selectCategory,
+                    onStationClick = viewModel::selectedRadio,
+                    onStationFavoriteClick = viewModel::toggleSavedRadio,
+                    onPreviousClick = viewModel::playPrevious,
+                    onNextClick = viewModel::playNext,
+                    onAutoSearchClick = viewModel::toggleAutoSearch,
                     onWebpageClick = {
                         it.homepage?.let { it1 -> urlHandler.openUri(it1) }
                     },
@@ -149,7 +162,6 @@ fun HomeScreen(
                             scope.launch { delay(1000) }
                             viewModel.selectedRadio(it)
                             scope.launch { bottomSheetState.bottomSheetState.expand() }
-                            viewModel.play(it.url)
                         }
                     )
                 }
@@ -183,8 +195,7 @@ fun HomeScreen(
                         onRadioClick = {
                             viewModel.selectedRadio(it)
                             scope.launch { bottomSheetState.bottomSheetState.expand() }
-                            viewModel.play(it.url)
-                        }
+                            }
                     )
                 }
             }
@@ -252,7 +263,6 @@ fun HomeScreen(
                     onClick = {
                         viewModel.selectedRadio(radio)
                         scope.launch { bottomSheetState.bottomSheetState.expand() }
-                        viewModel.play(radio.url)
                     }
                 )
             }
