@@ -104,6 +104,9 @@ fun HomeScreen(
     BottomSheetScaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = bottomSheetState,
+        sheetContainerColor = Color(0xFF0B1728),
+        sheetContentColor = Color(0xFFF5F0E6),
+        containerColor = Color(0xFF081321),
         sheetContent = {
             viewModel.selectedRadio?.let {
                 viewModel.playerRepository.PLayerUI(
