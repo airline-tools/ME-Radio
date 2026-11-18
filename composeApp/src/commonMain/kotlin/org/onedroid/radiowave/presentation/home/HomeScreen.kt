@@ -129,7 +129,7 @@ fun HomeScreen(
                         it.homepage?.let { it1 -> urlHandler.openUri(it1) }
                     },
                     onShareClick = {
-                        shareLink(it.url)
+                        shareLink(it.playableUrl)
                     },
                     onSaveClick = {
                         viewModel.saveRadio(it)
