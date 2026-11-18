@@ -412,10 +412,14 @@ actual class PlayerController(context: Context) : PlayerRepository {
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            if (hasError.value || playbackState.intValue == Player.STATE_IDLE || playbackState.intValue == Player.STATE_ENDED) {
+            if (hasError.value) {
                 OfflineIndicator(4.dp)
-            } else {
+            } else if (playbackState.intValue == Player.STATE_BUFFERING) {
+                Text("CONNECTING", color = Color(0xFFE8CC8B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            } else if (playbackState.intValue == Player.STATE_READY || isPlayingState) {
                 LiveIndicator(4.dp)
+            } else {
+                Text("READY", color = Color(0xFFE8CC8B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
             }
 
             LinearProgressIndicator(
