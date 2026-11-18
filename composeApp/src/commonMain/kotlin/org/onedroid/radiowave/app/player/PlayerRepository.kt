@@ -27,6 +27,7 @@ interface PlayerRepository {
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
+        statusContent: @Composable () -> Unit,
         onCloseClick: () -> Unit
     )
 
