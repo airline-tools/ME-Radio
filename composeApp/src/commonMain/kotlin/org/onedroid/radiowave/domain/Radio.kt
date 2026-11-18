@@ -23,5 +23,7 @@ data class Radio(
     val hasExtendedInfo: Boolean?,
     val lastPlayed: Long? = null,
     val frequency: String? = null,
-    val category: String? = null
+    val category: String? = null,
+    val masperoName: String? = null,
+    val streamReferer: String? = null
 )
