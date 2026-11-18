@@ -1,6 +1,7 @@
 package org.onedroid.radiowave.data.network
 
 import org.onedroid.radiowave.data.dto.RadioSearchResponseDto
+import org.onedroid.radiowave.data.dto.MEStationDto
 import org.onedroid.radiowave.app.utils.DataError
 import org.onedroid.radiowave.app.utils.Result
 
@@ -14,4 +15,6 @@ interface RemoteRadioDataSource {
         offset: Int,
         limit: Int
     ): Result<List<RadioSearchResponseDto>, DataError.Remote>
+
+    suspend fun fetchMEStations(): Result<List<MEStationDto>, DataError.Remote>
 }
