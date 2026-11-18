@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -47,8 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.C
 import androidx.media3.common.AudioAttributes
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -170,9 +174,9 @@ actual class PlayerController(context: Context) : PlayerRepository {
                 }
             }
             item {
-                radio.imgUrl?.let { imgUrl ->
+                if (!radio.imgUrl.isNullOrBlank()) {
                     val imagePainter = rememberAsyncImagePainter(
-                        model = imgUrl,
+                        model = radio.imgUrl,
                         placeholder = org.jetbrains.compose.resources.painterResource(Res.drawable.broken_image_radio),
                         error = org.jetbrains.compose.resources.painterResource(Res.drawable.broken_image_radio)
                     )
@@ -180,6 +184,39 @@ actual class PlayerController(context: Context) : PlayerRepository {
                         isPlaying = isPlayingState,
                         painter = imagePainter,
                     )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(250.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(205.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(Color(0xFF314968), Color(0xFF172942), Color(0xFF0B1728))
+                                    )
+                                )
+                                .border(2.dp, Color(0xFFD8B46C), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "ME",
+                                    color = Color(0xFFE4C47E),
+                                    style = MaterialTheme.typography.displayMedium,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Text(
+                                    text = "RADIO",
+                                    color = Color(0xFFF5F0E6),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    letterSpacing = 4.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
             item {
