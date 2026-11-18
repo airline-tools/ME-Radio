@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import org.onedroid.radiowave.domain.Radio
 
 interface PlayerRepository {
-    fun play(audioUrl: String, referer: String? = null)
+    fun play(audioUrl: String, referer: String? = null, stationName: String? = null)
 
     @Composable
     fun PLayerUI(
