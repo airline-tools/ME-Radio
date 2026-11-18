@@ -115,7 +115,7 @@ class HomeViewModel(
     fun play(streamUrl: String) {
         if (streamUrl.isBlank()) return
         isPlaying = true
-        playerRepository.play(streamUrl, selectedRadio?.streamReferer)
+        playerRepository.play(streamUrl, selectedRadio?.streamReferer, selectedRadio?.name)
     }
 
     fun togglePlayPause() {
