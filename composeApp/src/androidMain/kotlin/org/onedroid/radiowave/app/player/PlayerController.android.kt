@@ -580,11 +580,9 @@ actual class PlayerController(context: Context) : PlayerRepository {
     }
 
     override fun onCleared() {
-        metadataTimeoutJob?.cancel()
-        positionUpdateJob?.cancel()
-        coroutineScope.cancel()
-        // The MediaSessionService owns ExoPlayer. Releasing this UI controller
-        // must never stop a stream that is playing with the screen locked.
+        // Keep the MediaController connection and its lightweight observers alive.
+        // The MediaSessionService owns ExoPlayer and must continue playing after
+        // the Compose ViewModel or screen is cleared.
     }
 }
 
