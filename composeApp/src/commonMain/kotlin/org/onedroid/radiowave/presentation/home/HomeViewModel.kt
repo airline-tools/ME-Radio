@@ -11,6 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -124,14 +125,34 @@ class HomeViewModel(
             isLoading = true
             radioRepository.getMEStations()
                 .onSuccess { stations ->
-                    radios = stations
+                    // Wait for the saved-radio snapshot before merging. This avoids
+                    // losing a previously working URL when the catalog or Maspero
+                    // feed temporarily returns an empty stream URL.
+                    val savedSnapshot = radioRepository.getSavedRadios().first()
+                    val savedById = savedSnapshot.associateBy { it.id }
 
-                    // Refresh saved station records as well, so expiring Maspero
-                    // stream URLs do not remain stale in the local database.
-                    val savedSnapshot = savedRadios
+                    val mergedStations = stations.map { station ->
+                        val savedUrl = savedById[station.id]?.url
+                            ?.takeIf { it.isNotBlank() }
+                        val selectedUrl = station.url.takeIf { it.isNotBlank() }
+                            ?: savedUrl
+
+                        station.copy(
+                            url = selectedUrl.orEmpty(),
+                            urlResolved = selectedUrl ?: station.urlResolved
+                        )
+                    }
+
+                    radios = mergedStations
+
+                    // Persist only valid refreshed URLs. Never replace a working
+                    // saved stream with a blank URL if the Maspero feed is unavailable.
                     savedSnapshot.forEach { saved ->
-                        val refreshed = stations.firstOrNull { it.id == saved.id }
-                        if (refreshed != null && refreshed.url != saved.url) {
+                        val refreshed = mergedStations.firstOrNull { it.id == saved.id }
+                        if (refreshed != null &&
+                            refreshed.url.isNotBlank() &&
+                            refreshed.url != saved.url
+                        ) {
                             radioRepository.saveRadio(refreshed)
                         }
                     }
