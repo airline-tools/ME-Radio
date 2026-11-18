@@ -89,20 +89,27 @@ class RemoteRadioDataSourceImpl(
 
         // Maspero URLs are signed and may expire. Refresh them when online;
         // when offline, retain any stream URL already present in the catalog.
-        val masperoResult = safeCall<List<MasperoStreamDto>> {
+        // GitHub raw may serve JSON files as text/plain. Read the response as
+        // text first, then decode explicitly so Ktor content-type negotiation
+        // cannot reject the Maspero feed.
+        val masperoTextResult = safeCall<String> {
             httpClient.get(MASPERO_STREAMS_URL) {
                 // Maspero publishes short-lived signed CDN URLs. A unique query
-                // parameter and no-cache headers prevent Ktor's HTTP cache from
-                // handing the player an expired JSON snapshot.
+                // parameter and no-cache headers force a fresh snapshot on launch.
                 parameter("_refresh", Clock.System.now().toEpochMilliseconds())
                 header("User-Agent", "ME-Radio/1.0 Android Radio Player")
-                header("Accept", "application/json")
+                header("Accept", "application/json, text/plain, */*")
                 header("Cache-Control", "no-cache, no-store")
                 header("Pragma", "no-cache")
             }
         }
-        val liveStreams = when (masperoResult) {
-            is Result.Success -> masperoResult.data
+        val liveStreams = when (masperoTextResult) {
+            is Result.Success -> try {
+                Json { ignoreUnknownKeys = true }
+                    .decodeFromString<List<MasperoStreamDto>>(masperoTextResult.data)
+            } catch (_: Exception) {
+                emptyList()
+            }
             is Result.Error -> emptyList()
         }
 
