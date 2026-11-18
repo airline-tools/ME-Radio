@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.Composable
 import org.onedroid.radiowave.domain.Radio
 
 @Composable
@@ -33,98 +34,90 @@ fun RadioGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val playable = radio.url.isNotBlank()
-    val gold = Color(0xFFD8B46C)
-    val cardShape = RoundedCornerShape(20.dp)
+    val canTune = radio.url.isNotBlank() || !radio.masperoName.isNullOrBlank()
+    val hasUrl = radio.url.isNotBlank()
+    val gold = Color(0xFFC5A059)
+    val shape = RoundedCornerShape(13.dp)
 
     Surface(
         modifier = modifier
-            .padding(5.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .fillMaxWidth()
-            .clip(cardShape)
-            .clickable(enabled = playable, onClick = onClick),
-        shape = cardShape,
-        color = Color(0xFF122139),
-        border = BorderStroke(1.dp, gold.copy(alpha = if (playable) 0.32f else 0.12f)),
+            .clip(shape)
+            .clickable(enabled = canTune, onClick = onClick),
+        shape = shape,
+        color = Color(0xFF101D30),
+        border = BorderStroke(1.dp, gold.copy(alpha = if (canTune) .28f else .10f)),
         tonalElevation = 0.dp,
-        shadowElevation = 5.dp
+        shadowElevation = 2.dp
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF182B47), Color(0xFF101D31), Color(0xFF111A2A))
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFF172A44), Color(0xFF0E1A2C))
                     )
                 )
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 13.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            Box(
+                modifier = Modifier
+                    .size(39.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFA83A43), Color(0xFF5B1921))
+                        )
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFFE0C17E), Color(0xFF9B753A))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = when {
-                            radio.frequency?.contains("AM", true) == true -> "AM"
-                            radio.frequency?.contains("FM", true) == true -> "FM"
-                            else -> "♫"
-                        },
-                        color = Color(0xFF172238),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
+                Text("▶", color = Color(0xFFFFE7B0), fontSize = 13.sp, fontWeight = FontWeight.Black)
+            }
 
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = if (playable) "● LIVE" else "غير متاح",
-                    color = if (playable) Color(0xFF78D6A0) else Color(0xFF8993A2),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    radio.name.trim(),
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF5F0E6)
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    listOfNotNull(
+                        radio.frequency?.takeIf { it.isNotBlank() && it != "000" },
+                        radio.category?.takeIf { it.isNotBlank() }
+                    ).joinToString("  •  "),
+                    color = Color(0xFFB7C2D2),
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
-            Text(
-                text = radio.name.trim(),
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF5F0E6)
-                ),
-                maxLines = 2,
-                minLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.size(1.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = radio.frequency?.takeIf { it.isNotBlank() && it != "000" } ?: "إذاعة مصرية",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = gold,
-                    fontWeight = FontWeight.SemiBold
+                    when {
+                        hasUrl -> "رابط متاح"
+                        canTune -> "تحديث عند التشغيل"
+                        else -> "غير متاح"
+                    },
+                    color = when {
+                        hasUrl -> Color(0xFF79D6A1)
+                        canTune -> gold
+                        else -> Color(0xFF8993A2)
+                    },
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = radio.category.orEmpty(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFB7C2D2),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    radio.frequency?.substringBefore(" ")?.takeIf { it.isNotBlank() && it != "000" } ?: "LIVE RADIO",
+                    color = gold,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
