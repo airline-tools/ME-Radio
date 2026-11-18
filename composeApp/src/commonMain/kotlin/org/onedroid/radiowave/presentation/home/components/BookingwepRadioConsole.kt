@@ -66,8 +66,6 @@ fun BookingwepRadioConsole(
     onCategoryClick: (String) -> Unit,
     onCloseClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onVolumeUpClick: () -> Unit,
-    onVolumeDownClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     onAutoSearchClick: () -> Unit,
@@ -261,11 +259,9 @@ fun BookingwepRadioConsole(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioControl("−", onVolumeDownClick)
                         RadioControl("|◀", onPreviousClick)
                         RadioControl(if (isPlaying) "Ⅱ" else "▶", onPlayPauseClick, main = true)
                         RadioControl("▶|", onNextClick)
-                        RadioControl("+", onVolumeUpClick)
                         RadioControl(if (isAutoSearch) "■" else "AUTO", onAutoSearchClick, active = isAutoSearch, compact = true)
                     }
                 }
