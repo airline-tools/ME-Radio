@@ -210,7 +210,20 @@ fun BookingwepRadioConsole(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        SevenSegmentFrequency(frequency)
+                        if (frequency.all { it.isDigit() || it == '.' || it == '-' }) {
+                            SevenSegmentFrequency(frequency)
+                        } else {
+                            Text(
+                                frequency,
+                                color = RadioRed,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Black,
+                                style = MaterialTheme.typography.displaySmall.copy(
+                                    shadow = Shadow(RadioRed.copy(alpha = .9f), Offset.Zero, 16f)
+                                )
+                            )
+                        }
                         Spacer(Modifier.width(9.dp))
                         Surface(
                             shape = RoundedCornerShape(5.dp),
