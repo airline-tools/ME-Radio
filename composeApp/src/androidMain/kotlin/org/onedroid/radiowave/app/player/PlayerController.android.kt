@@ -34,6 +34,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +57,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
 import androidx.media3.common.AudioAttributes
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -89,17 +92,33 @@ import radiowave.composeapp.generated.resources.unable_to_detect
 
 actual class PlayerController(context: Context) : PlayerRepository {
 
-    private val player = ExoPlayer.Builder(context).build().apply {
-        // Respect other audio apps and pause safely when headphones are unplugged.
-        setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(C.USAGE_MEDIA)
-                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                .build(),
-            true
+    private val player = ExoPlayer.Builder(context)
+        .setMediaSourceFactory(
+            DefaultMediaSourceFactory(
+                DefaultHttpDataSource.Factory()
+                    .setUserAgent("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36")
+                    .setAllowCrossProtocolRedirects(true)
+                    .setDefaultRequestProperties(
+                        mapOf(
+                            "Referer" to "https://www.maspero.eg/",
+                            "Origin" to "https://www.maspero.eg",
+                            "Accept" to "*/*"
+                        )
+                    )
+            )
         )
-        setHandleAudioBecomingNoisy(true)
-    }
+        .build()
+        .apply {
+            // Respect other audio apps and pause safely when headphones are unplugged.
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                true
+            )
+            setHandleAudioBecomingNoisy(true)
+        }
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -127,7 +146,8 @@ actual class PlayerController(context: Context) : PlayerRepository {
         isSaved: Boolean,
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
-        onShareClick: () -> Unit
+        onShareClick: () -> Unit,
+        onRetryClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
         LazyColumn(
@@ -171,7 +191,7 @@ actual class PlayerController(context: Context) : PlayerRepository {
                     onVolumeUpClick = { volumeUp() },
                     onVolumeDownClick = { volumeDown() },
                     isPlaying = isPlayingState,
-                    playerStatusIndicator = { PlayerStatusIndicator() }
+                    playerStatusIndicator = { PlayerStatusIndicator(onRetryClick) }
                 )
             }
         }
@@ -341,7 +361,7 @@ actual class PlayerController(context: Context) : PlayerRepository {
 
     @SuppressLint("DefaultLocale")
     @Composable
-    private fun PlayerStatusIndicator() {
+    private fun PlayerStatusIndicator(onRetryClick: () -> Unit) {
 
         val playbackState = remember { mutableIntStateOf(player.playbackState) }
         val hasError = remember { mutableStateOf(false) }
@@ -406,7 +426,9 @@ actual class PlayerController(context: Context) : PlayerRepository {
             )
 
             when {
-                hasError.value -> Text("Failed to play", color = Color.Red)
+                hasError.value -> TextButton(onClick = onRetryClick) {
+                    Text("تعذر التشغيل — تحديث رابط البث", color = Color.Red)
+                }
                 playbackState.intValue == Player.STATE_BUFFERING -> CircularProgressIndicator(
                     modifier = Modifier.size(16.dp)
                 )
