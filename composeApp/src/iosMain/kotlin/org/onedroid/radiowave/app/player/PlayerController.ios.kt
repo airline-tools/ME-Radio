@@ -150,8 +150,6 @@ actual class PlayerController : PlayerRepository {
             onCategoryClick = onCategoryClick,
             onCloseClick = onCloseClick,
             onPlayPauseClick = { pauseResume() },
-            onVolumeUpClick = { volumeUp() },
-            onVolumeDownClick = { volumeDown() },
             onPreviousClick = onPreviousClick,
             onNextClick = onNextClick,
             onAutoSearchClick = onAutoSearchClick,
@@ -172,14 +170,6 @@ actual class PlayerController : PlayerRepository {
             player.pause()
             _isPlaying.value = false
         }
-    }
-
-    private fun volumeUp() {
-        player.volume = min(player.volume + 0.1f, 1.0f)
-    }
-
-    private fun volumeDown() {
-        player.volume = max(player.volume - 0.1f, 0.0f)
     }
 
     @Composable
