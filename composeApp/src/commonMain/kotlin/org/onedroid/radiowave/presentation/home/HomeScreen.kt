@@ -170,7 +170,7 @@ fun HomeScreen(
     ) { contentPadding ->
         Feed(
             modifier = Modifier.fillMaxSize().background(Color(0xFF081321)),
-            columns = GridCells.Adaptive(compactFeedWidth),
+            columns = GridCells.Fixed(1),
             state = gridState,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(0.dp),
