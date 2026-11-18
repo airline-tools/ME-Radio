@@ -169,7 +169,7 @@ class HomeViewModel(
                 }
                 .onError {
                     isTuning = false
-                    if (station.url.isNotBlank()) {
+                    if (station.playableUrl.isNotBlank()) {
                         selectedRadio = station
                         playerMessage = "تعذر تحديث الرابط؛ نجرب الرابط المحفوظ"
                         play(station.url)
@@ -224,7 +224,7 @@ class HomeViewModel(
         }
 
         val available = filteredRadios.filter {
-            it.url.isNotBlank() || !it.masperoName.isNullOrBlank()
+            it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
         }
         if (available.isEmpty()) return
 
