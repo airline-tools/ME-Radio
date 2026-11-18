@@ -14,8 +14,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.onedroid.radiowave.app.player.PlayerRepository
-import org.onedroid.radiowave.app.utils.MAX_RADIO_TO_FETCH
-import org.onedroid.radiowave.app.utils.SEARCH_TRIGGER_CHAR
 import org.onedroid.radiowave.app.utils.UiText
 import org.onedroid.radiowave.app.utils.onError
 import org.onedroid.radiowave.app.utils.onSuccess
@@ -28,12 +26,20 @@ class HomeViewModel(
     val playerRepository: PlayerRepository
 ) : ViewModel() {
 
-    private val cachedRadios = emptyList<Radio>()
     private var observeSaveJob: Job? = null
     private var searchJob: Job? = null
 
     var radios by mutableStateOf<List<Radio>>(emptyList())
         private set
+
+    val categories = listOf("الكل", "اغاني", "منوعات", "رياضة", "دراما", "قرآن", "اخبار")
+
+    var selectedCategory by mutableStateOf("الكل")
+        private set
+
+    val filteredRadios: List<Radio>
+        get() = if (selectedCategory == "الكل") radios
+        else radios.filter { it.category == selectedCategory }
 
     var savedRadios by mutableStateOf<List<Radio>>(emptyList())
         private set
@@ -71,15 +77,12 @@ class HomeViewModel(
     var isAboutDialogShowing by mutableStateOf(false)
         private set
 
-    private var offset by mutableStateOf(0)
-    private var limit by mutableStateOf(MAX_RADIO_TO_FETCH)
+    private var catalogLoaded = false
 
     init {
         getRadios()
         observeSavedRadio()
-        if (cachedRadios.isEmpty()) {
-            observeSearchQuery()
-        }
+        observeSearchQuery()
     }
 
     fun toggleAboutDialog() {
@@ -90,7 +93,12 @@ class HomeViewModel(
         isSearchActive = !isSearchActive
     }
 
+    fun selectCategory(category: String) {
+        selectedCategory = category
+    }
+
     fun play(streamUrl: String) {
+        if (streamUrl.isBlank()) return
         isPlaying = true
         playerRepository.play(streamUrl)
     }
@@ -104,55 +112,47 @@ class HomeViewModel(
     }
 
     fun selectedRadio(radio: Radio) {
+        if (radio.url.isBlank()) return
         observeSavedStatus(radio.id)
         selectedRadio = radio
     }
 
-    fun getRadios() = viewModelScope.launch {
-        isLoading = true
-        radioRepository.getRadios(
-            offset = offset,
-            limit = limit
-        ).onSuccess {
-            val allRadios = radios + it
-            isLoading = false
-            radios = allRadios
-            offset += limit
-        }.onError { error ->
-            errorMsg = error.toUiText()
-            isLoading = false
+    fun getRadios() {
+        if (isLoading || catalogLoaded) return
+        viewModelScope.launch {
+            isLoading = true
+            radioRepository.getMEStations()
+                .onSuccess { stations ->
+                    radios = stations
+                    catalogLoaded = true
+                    errorMsg = null
+                    isLoading = false
+                }
+                .onError { error ->
+                    errorMsg = error.toUiText()
+                    isLoading = false
+                }
         }
     }
 
     @OptIn(FlowPreview::class)
     private fun observeSearchQuery() {
         viewModelScope.launch {
-            snapshotFlow { searchQuery }.distinctUntilChanged().debounce(500L).collect { query ->
-                when {
-                    query.isBlank() -> {
+            snapshotFlow { searchQuery }
+                .distinctUntilChanged()
+                .debounce(250L)
+                .collect { query ->
+                    if (query.isBlank()) {
                         searchErrorMsg = null
-                        searchResult = cachedRadios
-                    }
-
-                    query.length >= SEARCH_TRIGGER_CHAR -> {
-                        searchJob?.cancel()
-                        searchJob = searchRadios(query)
+                        searchResult = emptyList()
+                    } else {
+                        searchResult = radios.filter { station ->
+                            station.name.contains(query, ignoreCase = true) ||
+                                station.frequency.orEmpty().contains(query, ignoreCase = true) ||
+                                station.category.orEmpty().contains(query, ignoreCase = true)
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    private fun searchRadios(query: String) = viewModelScope.launch {
-        isSearchLoading = true
-        radioRepository.searchRadios(query).onSuccess {
-            isSearchLoading = false
-            searchErrorMsg = null
-            searchResult = it
-        }.onError { error ->
-            searchResult = emptyList()
-            isSearchLoading = false
-            searchErrorMsg = error.toUiText()
         }
     }
 
@@ -163,21 +163,15 @@ class HomeViewModel(
         }.launchIn(viewModelScope)
     }
 
-    private fun observeSavedStatus(
-        radioId: String
-    ) = viewModelScope.launch {
-        radioId.let { radioId ->
-            radioRepository.isSaved(radioId).collect { isSaved ->
-                this@HomeViewModel.isSaved = isSaved
-            }
+    private fun observeSavedStatus(radioId: String) = viewModelScope.launch {
+        radioRepository.isSaved(radioId).collect { isSaved ->
+            this@HomeViewModel.isSaved = isSaved
         }
     }
 
     fun saveRadio(radio: Radio) = viewModelScope.launch {
-        observeSavedStatus(radio.id)
         if (isSaved) {
             radioRepository.deleteFromSaved(radio.id)
-            return@launch
         } else {
             radioRepository.saveRadio(radio)
         }
