@@ -291,8 +291,12 @@ class HomeViewModel(
         }
     }
 
-    fun getRadios() {
-        if (isLoading || catalogLoaded) return
+    fun refreshStations() {
+        getRadios(forceRefresh = true)
+    }
+
+    fun getRadios(forceRefresh: Boolean = false) {
+        if (isLoading || (catalogLoaded && !forceRefresh)) return
         viewModelScope.launch {
             isLoading = true
             radioRepository.getMEStations()
@@ -316,17 +320,24 @@ class HomeViewModel(
                     }
 
                     radios = mergedStations
-                    // Select a station for the digital console on first launch;
-                    // audio remains stopped until the user presses Play.
-                    if (selectedRadio == null) selectedRadio = mergedStations.firstOrNull()
+                    // Keep the current selection in sync with updated metadata,
+                    // and move to the first available station if it was removed.
+                    selectedRadio = selectedRadio?.let { current ->
+                        mergedStations.firstOrNull { it.id == current.id }
+                    } ?: mergedStations.firstOrNull()
 
                     // Persist only valid refreshed URLs. Never replace a working
                     // saved stream with a blank URL if the Maspero feed is unavailable.
                     savedSnapshot.forEach { saved ->
                         val refreshed = mergedStations.firstOrNull { it.id == saved.id }
                         if (refreshed != null &&
-                            refreshed.playableUrl.isNotBlank() &&
-                            refreshed.playableUrl != saved.playableUrl
+                            (
+                                (refreshed.playableUrl.isNotBlank() &&
+                                    refreshed.playableUrl != saved.playableUrl) ||
+                                refreshed.name != saved.name ||
+                                refreshed.frequency != saved.frequency ||
+                                refreshed.category != saved.category
+                            )
                         ) {
                             radioRepository.saveRadio(refreshed)
                         }
