@@ -54,24 +54,29 @@ fun RadioListItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val scale by animateFloatAsState(targetValue = if (isHovered) 1.04f else 1f)
+    val playable = radio.url.isNotBlank()
+    val scale by animateFloatAsState(targetValue = if (isHovered && playable) 1.04f else 1f)
 
     Surface(
         modifier = modifier
             .padding(extraSmall)
             .clip(Shapes.small)
             .scale(scale)
-            .clickable(onClick = onClick)
+            .clickable(
+                enabled = playable,
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .hoverable(interactionSource = interactionSource)
             .then(Modifier.fillMaxWidth()),
         tonalElevation = thin,
         shape = Shapes.small,
+        color = if (playable) MaterialTheme.colorScheme.surface
+        else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
-            modifier = Modifier
-                .padding(small)
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
+            modifier = Modifier.padding(small).fillMaxWidth().height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(small)
         ) {
@@ -84,10 +89,7 @@ fun RadioListItem(
                         imageUrl = imageUrl,
                         contentDescription = radio.name,
                         errorImage = painterResource(Res.drawable.broken_image_radio),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .clip(Shapes.small)
+                        modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(Shapes.small)
                     )
                 }
             }
@@ -95,9 +97,7 @@ fun RadioListItem(
             Spacer(modifier = Modifier.width(extraSmall))
 
             Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f),
+                modifier = Modifier.fillMaxHeight().weight(1f),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
@@ -107,34 +107,33 @@ fun RadioListItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Country: " + (radio.country?.takeIf { it.isNotBlank() }
-                        ?: stringResource(Res.string.unknown)),
+                    text = listOfNotNull(
+                        radio.frequency?.takeIf { it.isNotBlank() && it != "000" },
+                        radio.category?.takeIf { it.isNotBlank() }
+                    ).joinToString(" • ").ifBlank {
+                        radio.country?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.unknown)
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Language: " + (radio.language?.firstOrNull { it.isNotBlank() }
-                        ?.replaceFirstChar { it.uppercase() }
-                        ?: stringResource(Res.string.unknown)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Bitrate: " + ((radio.bitrate?.toString()
-                        .takeIf { it?.isNotBlank() == true } ?: "0") + " kbps"),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = if (playable) "متاحة للاستماع" else "الرابط غير متاح حالياً",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (playable) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
 
-            Icon(
-                modifier = Modifier.size(extraLarge),
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = stringResource(Res.string.right_arrow)
-            )
+            if (playable) {
+                Icon(
+                    modifier = Modifier.size(extraLarge),
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = stringResource(Res.string.right_arrow)
+                )
+            }
         }
     }
 }
