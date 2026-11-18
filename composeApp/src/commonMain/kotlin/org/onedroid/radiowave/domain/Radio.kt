@@ -21,5 +21,7 @@ data class Radio(
     val geoLat: Double?,
     val geoLong: Double?,
     val hasExtendedInfo: Boolean?,
-    val lastPlayed: Long? = null
+    val lastPlayed: Long? = null,
+    val frequency: String? = null,
+    val category: String? = null
 )
