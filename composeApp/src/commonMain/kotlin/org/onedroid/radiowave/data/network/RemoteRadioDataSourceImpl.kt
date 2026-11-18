@@ -4,6 +4,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.readBytes
 import org.onedroid.radiowave.app.utils.DataError
 import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER1
 import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER2
@@ -14,6 +17,7 @@ import org.onedroid.radiowave.app.utils.safeCall
 import org.onedroid.radiowave.data.dto.MEStationDto
 import org.onedroid.radiowave.data.dto.MasperoStreamDto
 import org.onedroid.radiowave.data.dto.RadioSearchResponseDto
+import radiowave.composeapp.generated.resources.Res
 
 class RemoteRadioDataSourceImpl(
     private val httpClient: HttpClient,
@@ -60,35 +64,48 @@ class RemoteRadioDataSourceImpl(
         }
     }
 
+    @OptIn(ExperimentalResourceApi::class)
     override suspend fun fetchMEStations(): Result<List<MEStationDto>, DataError.Remote> {
-        val catalogResult = safeCall<List<MEStationDto>> {
+        // Always prefer the latest catalog from GitHub, but keep the bundled
+        // resource as an offline fallback so the station list still opens
+        // without a network connection.
+        val remoteCatalog = safeCall<List<MEStationDto>> {
             httpClient.get(ME_RADIO_CATALOG_URL)
         }
 
-        return when (catalogResult) {
-            is Result.Error -> catalogResult
-            is Result.Success -> {
-                // Maspero URLs are signed and can expire, so refresh them from the
-                // maintained GitHub JSON whenever the station catalog is loaded.
-                val masperoResult = safeCall<List<MasperoStreamDto>> {
-                    httpClient.get(MASPERO_STREAMS_URL)
+        val catalog = when (remoteCatalog) {
+            is Result.Success -> remoteCatalog.data
+            is Result.Error -> {
+                try {
+                    Json { ignoreUnknownKeys = true }
+                        .decodeFromString<List<MEStationDto>>(
+                            Res.readBytes("files/stations.json").decodeToString()
+                        )
+                } catch (_: Exception) {
+                    return remoteCatalog
                 }
-                val liveStreams = when (masperoResult) {
-                    is Result.Success -> masperoResult.data
-                    is Result.Error -> emptyList()
-                }
-
-                Result.Success(
-                    catalogResult.data.map { station ->
-                        val liveUrl = station.masperoName
-                            ?.let { name -> liveStreams.firstOrNull { it.name == name }?.url }
-                            ?.takeIf { it.isNotBlank() }
-
-                        station.copy(stream = liveUrl ?: station.stream)
-                    }
-                )
             }
         }
+
+        // Maspero URLs are signed and may expire. Refresh them when online;
+        // when offline, retain any stream URL already present in the catalog.
+        val masperoResult = safeCall<List<MasperoStreamDto>> {
+            httpClient.get(MASPERO_STREAMS_URL)
+        }
+        val liveStreams = when (masperoResult) {
+            is Result.Success -> masperoResult.data
+            is Result.Error -> emptyList()
+        }
+
+        return Result.Success(
+            catalog.map { station ->
+                val liveUrl = station.masperoName
+                    ?.let { name -> liveStreams.firstOrNull { it.name == name }?.url }
+                    ?.takeIf { !it.isNullOrBlank() }
+
+                station.copy(stream = liveUrl ?: station.stream)
+            }
+        )
     }
 
     private suspend fun <T> fetchFromMirrors(
