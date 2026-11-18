@@ -170,8 +170,10 @@ actual class PlayerController : PlayerRepository {
     private fun pauseResume() {
         if (player.rate.toDouble() == 0.0) {
             player.play()
+            _isPlaying.value = true
         } else {
             player.pause()
+            _isPlaying.value = false
         }
     }
 
