@@ -6,7 +6,6 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.readBytes
 import org.onedroid.radiowave.app.utils.DataError
 import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER1
 import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER2
