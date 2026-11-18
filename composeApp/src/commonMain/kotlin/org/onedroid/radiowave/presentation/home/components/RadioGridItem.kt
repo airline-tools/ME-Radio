@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.resources.painterResource
 import org.onedroid.radiowave.domain.Radio
@@ -39,33 +38,36 @@ fun RadioGridItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
-    val scale by animateFloatAsState(targetValue = if (isHovered) 1.05f else 1f)
+    val scale by animateFloatAsState(targetValue = if (isHovered && radio.url.isNotBlank()) 1.05f else 1f)
+    val playable = radio.url.isNotBlank()
 
     Surface(
         modifier = modifier
             .padding(thin)
             .clip(Shapes.small)
             .scale(scale)
-            .clickable(onClick = onClick)
+            .clickable(
+                enabled = playable,
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .hoverable(interactionSource = interactionSource)
             .then(Modifier.fillMaxWidth()),
         tonalElevation = thin,
         shape = Shapes.small,
+        color = if (playable) MaterialTheme.colorScheme.surface
+        else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Column(
-            modifier = Modifier
-                .padding(small)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(small).fillMaxWidth(),
         ) {
             radio.imgUrl?.let { imageUrl ->
                 CustomAsyncImage(
                     imageUrl = imageUrl,
                     contentDescription = radio.name,
                     errorImage = painterResource(Res.drawable.broken_image_radio),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(Shapes.small)
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(Shapes.small)
                 )
             }
 
@@ -81,28 +83,20 @@ fun RadioGridItem(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            val language = radio.language?.firstOrNull { it.isNotBlank() }
-            if (language != null) {
-                Text(
-                    text = language.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else {
-                radio.country?.let { country ->
-                    Text(
-                        text = country,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
+            val stationInfo = listOfNotNull(
+                radio.frequency?.takeIf { it.isNotBlank() && it != "000" },
+                radio.category?.takeIf { it.isNotBlank() }
+            ).joinToString(" • ")
+
+            Text(
+                text = stationInfo.ifBlank { if (playable) "إذاعة مصرية" else "الرابط غير متاح حالياً" },
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = if (playable) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.error
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
