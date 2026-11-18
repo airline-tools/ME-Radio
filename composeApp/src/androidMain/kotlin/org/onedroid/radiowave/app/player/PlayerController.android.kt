@@ -429,8 +429,8 @@ actual class PlayerController(context: Context) : PlayerRepository {
                     .padding(horizontal = 10.dp)
                     .height(8.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = Color.Green,
-                trackColor = Color.DarkGray,
+                color = Color(0xFFC5A059),
+                trackColor = Color(0xFF252B34),
             )
 
             when {
