@@ -6,8 +6,8 @@ import org.onedroid.radiowave.domain.Radio
 class PlayerRepositoryImpl(
     private val playerController: PlayerController
 ) : PlayerRepository {
-    override fun play(audioUrl: String, referer: String?) {
-        playerController.play(audioUrl, referer)
+    override fun play(audioUrl: String, referer: String?, stationName: String?) {
+        playerController.play(audioUrl, referer, stationName)
     }
 
     @Composable
