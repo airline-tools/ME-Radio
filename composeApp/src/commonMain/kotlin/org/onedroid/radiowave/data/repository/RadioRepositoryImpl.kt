@@ -36,12 +36,16 @@ class RadioRepositoryImpl(
         }
     }
 
+    override suspend fun getMEStations(): Result<List<Radio>, DataError.Remote> {
+        return remoteRadioDataSource.fetchMEStations().map { stations ->
+            stations.map { it.toRadio() }
+        }
+    }
+
     override suspend fun saveRadio(radio: Radio): EmptyResult<DataError.Local> {
         return try {
             radioWaveDao.upsert(
-                radio.toRadioEntity(
-                    isSaved = true
-                )
+                radio.toRadioEntity(isSaved = true)
             )
             Result.Success(Unit)
         } catch (e: SQLiteException) {
