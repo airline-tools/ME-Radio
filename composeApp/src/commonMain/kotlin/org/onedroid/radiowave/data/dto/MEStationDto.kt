@@ -9,12 +9,14 @@ data class MEStationDto(
     val frequency: String,
     val category: String,
     val stream: String? = null,
-    val masperoName: String? = null
+    val masperoName: String? = null,
+    val streamReferer: String? = null
 )
 
 @Serializable
 data class MasperoStreamDto(
     val name: String,
     val frequency: String? = null,
-    val url: String? = null
+    val url: String? = null,
+    val source: String? = null
 )
