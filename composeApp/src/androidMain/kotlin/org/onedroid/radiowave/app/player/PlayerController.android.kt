@@ -85,6 +85,7 @@ import org.onedroid.radiowave.R
 import org.onedroid.radiowave.app.theme.small
 import org.onedroid.radiowave.app.theme.thin
 import org.onedroid.radiowave.domain.Radio
+import org.onedroid.radiowave.presentation.home.components.BookingwepRadioConsole
 import org.onedroid.radiowave.presentation.home.components.AnimatedRadioCoverImage
 import org.onedroid.radiowave.presentation.home.components.PlayerFullWidthView
 import org.onedroid.radiowave.presentation.home.components.RadioActionButtons
@@ -140,104 +141,54 @@ actual class PlayerController(context: Context) : PlayerRepository {
     @Composable
     override fun PLayerUI(
         radio: Radio,
+        stations: List<Radio>,
+        savedStations: List<Radio>,
+        categories: List<String>,
+        selectedCategory: String,
         isSaved: Boolean,
+        isTuning: Boolean,
+        playerMessage: String?,
+        isAutoSearch: Boolean,
+        onCategoryClick: (String) -> Unit,
+        onStationClick: (Radio) -> Unit,
+        onStationFavoriteClick: (Radio) -> Unit,
+        onPreviousClick: () -> Unit,
+        onNextClick: () -> Unit,
+        onAutoSearchClick: () -> Unit,
         onSaveClick: () -> Unit,
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
+        statusContent: @Composable () -> Unit,
         onCloseClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(small)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    TextButton(onClick = onCloseClick) {
-                        Text("‹  العودة إلى الإذاعات", color = Color(0xFFE0BD72), fontWeight = FontWeight.Bold)
-                    }
-                    Text("ME RADIO", color = Color(0xFFBFC9D8), style = MaterialTheme.typography.labelSmall)
-                }
-            }
-            item {
-                if (!radio.imgUrl.isNullOrBlank()) {
-                    val imagePainter = rememberAsyncImagePainter(
-                        model = radio.imgUrl,
-                        placeholder = org.jetbrains.compose.resources.painterResource(Res.drawable.broken_image_radio),
-                        error = org.jetbrains.compose.resources.painterResource(Res.drawable.broken_image_radio)
-                    )
-                    AnimatedRadioCoverImage(
-                        isPlaying = isPlayingState,
-                        painter = imagePainter,
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(250.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(205.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.radialGradient(
-                                        listOf(Color(0xFF314968), Color(0xFF172942), Color(0xFF0B1728))
-                                    )
-                                )
-                                .border(2.dp, Color(0xFFD8B46C), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "ME",
-                                    color = Color(0xFFE4C47E),
-                                    style = MaterialTheme.typography.displayMedium,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                                Text(
-                                    text = "RADIO",
-                                    color = Color(0xFFF5F0E6),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    letterSpacing = 4.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-                RadioDetails(
-                    radio = radio,
-                    nowPlayingIndicator = {
-                        NowPlayingIndicator()
-                    }
-                )
-            }
-            item {
-                RadioActionButtons(
-                    isSaved = isSaved,
-                    onSaveClick = onSaveClick,
-                    onWebpageClick = onWebpageClick,
-                    onShareClick = onShareClick
-                )
-            }
-
-            item {
-                PlayerFullWidthView(
-                    onPlayClick = { pauseResume() },
-                    onVolumeUpClick = { volumeUp() },
-                    onVolumeDownClick = { volumeDown() },
-                    isPlaying = isPlayingState,
-                    playerStatusIndicator = { PlayerStatusIndicator(onRetryClick) }
-                )
-            }
-        }
+        BookingwepRadioConsole(
+            radio = radio,
+            stations = stations,
+            savedStations = savedStations,
+            isSaved = isSaved,
+            isPlaying = isPlayingState,
+            isTuning = isTuning,
+            playerMessage = playerMessage,
+            isAutoSearch = isAutoSearch,
+            categories = categories,
+            selectedCategory = selectedCategory,
+            onCategoryClick = onCategoryClick,
+            onCloseClick = onCloseClick,
+            onPlayPauseClick = { pauseResume() },
+            onVolumeUpClick = { volumeUp() },
+            onVolumeDownClick = { volumeDown() },
+            onPreviousClick = onPreviousClick,
+            onNextClick = onNextClick,
+            onAutoSearchClick = onAutoSearchClick,
+            onSaveClick = onSaveClick,
+            onStationFavoriteClick = onStationFavoriteClick,
+            onStationClick = onStationClick,
+            onShareClick = onShareClick,
+            onWebpageClick = onWebpageClick,
+            statusContent = statusContent
+        )
     }
 
     override fun play(audioUrl: String, referer: String?) {
