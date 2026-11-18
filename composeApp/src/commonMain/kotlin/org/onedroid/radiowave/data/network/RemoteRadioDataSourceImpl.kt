@@ -5,6 +5,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import kotlinx.serialization.json.Json
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.onedroid.radiowave.app.utils.DataError
 import org.onedroid.radiowave.app.utils.RADIO_BROWSER_BASE_URL_SERVER1
@@ -89,7 +90,14 @@ class RemoteRadioDataSourceImpl(
         // Maspero URLs are signed and may expire. Refresh them when online;
         // when offline, retain any stream URL already present in the catalog.
         val masperoResult = safeCall<List<MasperoStreamDto>> {
-            httpClient.get(MASPERO_STREAMS_URL)
+            httpClient.get(MASPERO_STREAMS_URL) {
+                // Maspero publishes short-lived signed CDN URLs. A unique query
+                // parameter and no-cache headers prevent Ktor's HTTP cache from
+                // handing the player an expired JSON snapshot.
+                parameter("_refresh", Clock.System.now().toEpochMilliseconds())
+                header("Cache-Control", "no-cache, no-store")
+                header("Pragma", "no-cache")
+            }
         }
         val liveStreams = when (masperoResult) {
             is Result.Success -> masperoResult.data
@@ -98,9 +106,13 @@ class RemoteRadioDataSourceImpl(
 
         return Result.Success(
             catalog.map { station ->
-                val liveUrl = station.masperoName
-                    ?.let { name -> liveStreams.firstOrNull { it.name == name }?.url }
-                    ?.takeIf { !it.isNullOrBlank() }
+                val expectedName = station.masperoName?.trim()
+                val liveUrl = expectedName
+                    ?.let { name ->
+                        liveStreams.firstOrNull { it.name.trim().equals(name, ignoreCase = true) }?.url
+                    }
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() && it.startsWith("https://") }
 
                 station.copy(stream = liveUrl ?: station.stream)
             }
