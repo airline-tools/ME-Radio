@@ -31,6 +31,7 @@ class HomeViewModel(
     private var observeSaveJob: Job? = null
     private var savedStatusJob: Job? = null
     private var searchJob: Job? = null
+    private var tuneJob: Job? = null
 
     var radios by mutableStateOf<List<Radio>>(emptyList())
         private set
@@ -74,6 +75,12 @@ class HomeViewModel(
     var isPlaying by mutableStateOf(false)
         private set
 
+    var isTuning by mutableStateOf(false)
+        private set
+
+    var playerMessage by mutableStateOf<String?>(null)
+        private set
+
     var isSaved by mutableStateOf(true)
         private set
 
@@ -103,7 +110,7 @@ class HomeViewModel(
     fun play(streamUrl: String) {
         if (streamUrl.isBlank()) return
         isPlaying = true
-        playerRepository.play(streamUrl)
+        playerRepository.play(streamUrl, selectedRadio?.streamReferer)
     }
 
     fun togglePlayPause() {
@@ -111,27 +118,57 @@ class HomeViewModel(
     }
 
     fun closePlayer() {
+        tuneJob?.cancel()
+        isTuning = false
         selectedRadio = null
         savedStatusJob?.cancel()
     }
 
     fun retrySelectedRadio() {
-        val current = selectedRadio ?: return
-        viewModelScope.launch {
+        selectedRadio?.let { tuneStation(it, forceRefresh = true) }
+    }
+
+    private fun tuneStation(station: Radio, forceRefresh: Boolean = false) {
+        tuneJob?.cancel()
+        playerMessage = null
+
+        if (station.masperoName.isNullOrBlank() && !forceRefresh) {
+            selectedRadio = station
+            play(station.url)
+            return
+        }
+
+        isTuning = true
+        playerMessage = "جارٍ تحديث رابط البث المباشر…"
+        tuneJob = viewModelScope.launch {
             radioRepository.getMEStations()
                 .onSuccess { stations ->
-                    val refreshed = stations.firstOrNull { it.id == current.id }
-                    if (refreshed != null && refreshed.url.isNotBlank()) {
-                        radios = radios.map { if (it.id == refreshed.id) refreshed else it }
-                        selectedRadio = refreshed
-                        play(refreshed.url)
-                        errorMsg = null
+                    val fresh = stations.firstOrNull { it.id == station.id }
+                    if (fresh != null && fresh.url.isNotBlank()) {
+                        radios = radios.map { if (it.id == fresh.id) fresh else it }
+                        selectedRadio = fresh
+                        playerMessage = null
+                        play(fresh.url)
+                    } else if (station.url.isNotBlank()) {
+                        // Keep a previously working URL as a fallback, but do not
+                        // label the station unavailable just because refresh failed.
+                        selectedRadio = station
+                        playerMessage = "تعذر تحديث الرابط؛ نجرب الرابط المحفوظ"
+                        play(station.url)
                     } else {
-                        errorMsg = UiText.DynamicString("تعذر تحديث رابط البث. حاول مرة أخرى بعد قليل.")
+                        playerMessage = "رابط البث غير متاح حاليًا"
                     }
+                    isTuning = false
                 }
-                .onError { error ->
-                    errorMsg = error.toUiText()
+                .onError {
+                    isTuning = false
+                    if (station.url.isNotBlank()) {
+                        selectedRadio = station
+                        playerMessage = "تعذر تحديث الرابط؛ نجرب الرابط المحفوظ"
+                        play(station.url)
+                    } else {
+                        playerMessage = "تعذر جلب رابط البث. حاول مرة أخرى"
+                    }
                 }
         }
     }
@@ -141,12 +178,13 @@ class HomeViewModel(
     }
 
     fun selectedRadio(radio: Radio) {
-        if (radio.url.isBlank()) return
+        val station = radios.firstOrNull { it.id == radio.id } ?: radio
         // Reset immediately so the previous station's favorite state cannot
         // briefly affect the newly selected station while Room emits its value.
         isSaved = false
-        observeSavedStatus(radio.id)
-        selectedRadio = radio
+        observeSavedStatus(station.id)
+        selectedRadio = station
+        tuneStation(station)
     }
 
     fun getRadios() {
