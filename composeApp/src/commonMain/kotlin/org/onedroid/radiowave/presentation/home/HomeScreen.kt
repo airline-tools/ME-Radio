@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -86,8 +88,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val gridState = rememberLazyGridState()
-    val uniqueRadios = viewModel.radios.distinctBy { it.id to it.url }
-    val radiosSize by mutableStateOf(uniqueRadios.size)
+    val uniqueRadios = viewModel.filteredRadios.distinctBy { it.id }
+    val radiosSize = uniqueRadios.size
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val bottomSheetState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
@@ -169,16 +171,32 @@ fun HomeScreen(
                 }
             }
 
-            title(contentType = "latest-title") { FeedTitle(title = stringResource(Res.string.recently_updated)) }
+            single {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = extraSmall, vertical = small),
+                    horizontalArrangement = Arrangement.spacedBy(extraSmall)
+                ) {
+                    viewModel.categories.forEach { category ->
+                        FilterChip(
+                            selected = viewModel.selectedCategory == category,
+                            onClick = { viewModel.selectCategory(category) },
+                            label = { Text(category) }
+                        )
+                    }
+                }
+            }
+
+            title(contentType = "latest-title") {
+                FeedTitle(title = "إذاعات مصر")
+            }
 
             items(
                 count = radiosSize,
                 key = { uniqueRadios[it].id }
             ) { index ->
                 val radio = uniqueRadios[index]
-                if (index == radiosSize - 1 && !viewModel.isLoading && viewModel.errorMsg == null) {
-                    viewModel.getRadios()
-                }
                 RadioGridItem(
                     radio = radio,
                     onClick = {
