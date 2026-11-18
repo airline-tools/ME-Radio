@@ -10,6 +10,7 @@
   {"id":"onsport-fm","name":"ONsport FM","frequency":"93.7 FM","category":"رياضة","stream":"https://carina.streamerr.co:2020/stream/OnSportFM"},
   {"id":"radio-shaabi","name":"راديو شعبي","frequency":"95.0 FM","category":"اغاني","stream":"https://radio95.radioca.st/;"},
   {"id":"european-program","name":"البرنامج الأوروبي","frequency":"95.4 FM","category":"اغاني","stream":null,"masperoName":"البرنامج الأوروبي"},
+  {"id":"quran-karim","name":"إذاعة القرآن الكريم","frequency":"98.2 FM","category":"قرآن","stream":"https://stream.radiojar.com/8s5u5tpdtwzuv"},
   {"id":"nogoum-fm","name":"نجوم FM","frequency":"100.6 FM","category":"اغاني","stream":"https://audio.nrpstream.com/listen/nogoumfm/radio.mp3"},
   {"id":"greater-cairo","name":"إذاعة القاهرة الكبرى","frequency":"102.2 FM","category":"منوعات","stream":null,"masperoName":"إذاعة القاهرة الكبرى"},
   {"id":"nile-fm","name":"Nile FM","frequency":"104.2 FM","category":"اغاني","stream":"https://audio.nrpstream.com/listen/nile_fm/radio.mp3"},
