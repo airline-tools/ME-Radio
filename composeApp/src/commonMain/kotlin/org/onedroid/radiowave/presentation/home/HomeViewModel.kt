@@ -138,15 +138,15 @@ class HomeViewModel(
     @OptIn(FlowPreview::class)
     private fun observeSearchQuery() {
         viewModelScope.launch {
-            snapshotFlow { searchQuery }
+            snapshotFlow { searchQuery to radios }
                 .distinctUntilChanged()
                 .debounce(250L)
-                .collect { query ->
+                .collect { (query, stationList) ->
                     if (query.isBlank()) {
                         searchErrorMsg = null
                         searchResult = emptyList()
                     } else {
-                        searchResult = radios.filter { station ->
+                        searchResult = stationList.filter { station ->
                             station.name.contains(query, ignoreCase = true) ||
                                 station.frequency.orEmpty().contains(query, ignoreCase = true) ||
                                 station.category.orEmpty().contains(query, ignoreCase = true)
