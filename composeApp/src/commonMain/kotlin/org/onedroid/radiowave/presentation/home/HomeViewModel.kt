@@ -197,7 +197,7 @@ class HomeViewModel(
     private fun normalizeStationName(value: String): String = value.trim()
         .replace("ـ", "")
         .replace(Regex("[\u064B-\u065F\u0670]"), "")
-        .replace(Regex("\s+"), "")
+        .replace(Regex("\\s+"), "")
         .lowercase()
 
     fun updateSearchQuery(query: String) {
