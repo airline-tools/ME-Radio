@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.onedroid.radiowave.app.theme.extraSmall
@@ -42,7 +44,8 @@ fun RadioActionButtons(
                 ),
                 onClick = {
                     onSaveClick()
-                }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD8B46C), contentColor = Color(0xFF142039))
             ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
@@ -63,7 +66,8 @@ fun RadioActionButtons(
                 modifier = Modifier.padding(horizontal = thin).width(115.dp),
                 onClick = {
                     onShareClick()
-                }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD8B46C), contentColor = Color(0xFF142039))
             ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
@@ -80,7 +84,8 @@ fun RadioActionButtons(
                 modifier = Modifier.padding(horizontal = thin).width(145.dp),
                 onClick = {
                     onWebpageClick()
-                }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD8B46C), contentColor = Color(0xFF142039))
             ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
