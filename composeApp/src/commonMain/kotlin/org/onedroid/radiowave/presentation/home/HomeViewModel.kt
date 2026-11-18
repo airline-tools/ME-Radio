@@ -228,7 +228,20 @@ class HomeViewModel(
     fun playNext() = playRelativeStation(1)
 
     private fun playRelativeStation(direction: Int) {
-        val available = filteredRadios.filter {
+        // Favorite mode takes priority when AUTO starts on a saved station.
+        // Otherwise filteredRadios already represents the selected category,
+        // or the complete catalog when "الكل" is selected.
+        val currentStation = selectedRadio
+        val currentIsFavorite = currentStation != null &&
+            savedRadios.any { it.id == currentStation.id }
+        val scanSource = if (currentIsFavorite && savedRadios.isNotEmpty()) {
+            savedRadios.map { saved ->
+                radios.firstOrNull { it.id == saved.id } ?: saved
+            }
+        } else {
+            filteredRadios
+        }
+        val available = scanSource.filter {
             it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
         }
         if (available.isEmpty()) return
