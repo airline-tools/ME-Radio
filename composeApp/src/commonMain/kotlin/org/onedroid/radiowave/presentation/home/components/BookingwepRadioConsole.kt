@@ -105,13 +105,6 @@ fun BookingwepRadioConsole(
                     Spacer(Modifier.width(9.dp))
                     Text("الراديو", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    "BOOKINGWEP RADIO",
-                    color = Color(0xFF9CA9BB),
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
             }
             Surface(
                 modifier = Modifier.size(36.dp).clickable(onClick = onCloseClick),
