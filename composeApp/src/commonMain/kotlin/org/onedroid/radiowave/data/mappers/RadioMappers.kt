@@ -29,7 +29,9 @@ fun MEStationDto.toRadio(): Radio {
         geoLong = null,
         hasExtendedInfo = false,
         frequency = frequency,
-        category = category
+        category = category,
+        masperoName = masperoName,
+        streamReferer = streamReferer
     )
 }
 
