@@ -30,6 +30,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -100,6 +101,11 @@ fun HomeScreen(
     val bottomSheetState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
     val urlHandler = LocalUriHandler.current
+
+    // Open the Bookingwep radio console as the app's landing screen.
+    LaunchedEffect(viewModel.selectedRadio?.id) {
+        if (viewModel.selectedRadio != null) bottomSheetState.bottomSheetState.expand()
+    }
 
     BottomSheetScaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
