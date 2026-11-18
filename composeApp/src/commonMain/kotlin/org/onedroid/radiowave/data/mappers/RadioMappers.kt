@@ -12,7 +12,7 @@ fun MEStationDto.toRadio(): Radio {
         name = name,
         url = stream.orEmpty(),
         urlResolved = stream,
-        homepage = null,
+        homepage = streamReferer,
         imgUrl = null,
         tags = listOf(category),
         country = "مصر",
