@@ -81,7 +81,7 @@ fun BookingwepRadioConsole(
     } else stations
     val frequency = radio.frequency.orEmpty().substringBefore(" ").ifBlank { "---" }
     val band = if (radio.frequency.orEmpty().contains("AM", true)) "AM" else "FM"
-    val playable = radio.url.isNotBlank() || !radio.masperoName.isNullOrBlank()
+    val playable = radio.playableUrl.isNotBlank() || !radio.masperoName.isNullOrBlank()
 
     Column(
         modifier = Modifier
@@ -332,7 +332,7 @@ fun BookingwepRadioConsole(
         ) {
             items(visibleStations, key = { it.id }) { station ->
                 val isStationSaved = savedStations.any { it.id == station.id }
-                val canTune = station.url.isNotBlank() || !station.masperoName.isNullOrBlank()
+                val canTune = station.playableUrl.isNotBlank() || !station.masperoName.isNullOrBlank()
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
