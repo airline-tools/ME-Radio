@@ -3,9 +3,6 @@ package org.onedroid.radiowave.presentation.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -43,8 +39,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -108,38 +102,24 @@ fun HomeScreen(
         scaffoldState = bottomSheetState,
         sheetContent = {
             viewModel.selectedRadio?.let {
-                Column(modifier = Modifier.fillMaxWidth().background(Color(0xFF0B1728))) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        TextButton(
-                            onClick = {
-                                viewModel.closePlayer()
-                                scope.launch { bottomSheetState.bottomSheetState.hide() }
-                            }
-                        ) {
-                            Text("‹  العودة إلى الإذاعات", color = Color(0xFFE0BD72), fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text("ME RADIO", color = Color(0xFFBFC9D8), style = MaterialTheme.typography.labelSmall, letterSpacing = 2.sp)
+                viewModel.playerRepository.PLayerUI(
+                    radio = it,
+                    isSaved = viewModel.isSaved,
+                    onWebpageClick = {
+                        it.homepage?.let { it1 -> urlHandler.openUri(it1) }
+                    },
+                    onShareClick = {
+                        shareLink(it.url)
+                    },
+                    onSaveClick = {
+                        viewModel.saveRadio(it)
+                    },
+                    onRetryClick = viewModel::retrySelectedRadio,
+                    onCloseClick = {
+                        viewModel.closePlayer()
+                        scope.launch { bottomSheetState.bottomSheetState.hide() }
                     }
-                    viewModel.playerRepository.PLayerUI(
-                        radio = it,
-                        isSaved = viewModel.isSaved,
-                        onWebpageClick = {
-                            it.homepage?.let { it1 -> urlHandler.openUri(it1) }
-                        },
-                        onShareClick = {
-                            shareLink(it.url)
-                        },
-                        onSaveClick = {
-                            viewModel.saveRadio(it)
-                        },
-                        onRetryClick = viewModel::retrySelectedRadio
-                    )
-                }
+                )
             }
         },
         sheetPeekHeight = if (viewModel.selectedRadio != null) BottomSheetDefaults.SheetPeekHeight else 0.dp,
