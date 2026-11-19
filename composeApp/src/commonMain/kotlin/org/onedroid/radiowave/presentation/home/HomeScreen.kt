@@ -147,6 +147,7 @@ fun HomeScreen(
                     playerMessage = viewModel.playerMessage,
                     isAutoSearch = viewModel.isAutoSearch,
                     onCategoryClick = viewModel::selectCategory,
+                    onFavoritesClick = viewModel::toggleFavoritesOnly,
                     onStationClick = viewModel::selectedRadio,
                     onStationFavoriteClick = { viewModel.toggleSavedRadio(it) },
                     onPreviousClick = viewModel::playPrevious,
