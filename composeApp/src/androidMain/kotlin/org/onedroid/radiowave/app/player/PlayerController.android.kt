@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.content.Context
+import android.app.UiModeManager
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -24,6 +27,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -165,7 +170,11 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         onCloseClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
-        BookingwepRadioConsole(
+        val showScreenOffButton = remember { isTvOrCarDevice() }
+        var isScreenBlanked by remember { mutableStateOf(false) }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            BookingwepRadioConsole(
             radio = radio,
             stations = stations,
             savedStations = savedStations,
@@ -188,8 +197,37 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
             onStationClick = onStationClick,
             onShareClick = onShareClick,
             onWebpageClick = onWebpageClick,
-            statusContent = { PlayerStatusIndicator(onRetryClick) }
-        )
+            statusContent = { PlayerStatusIndicator(onRetryClick) },
+            showScreenOffButton = showScreenOffButton,
+            onScreenOffClick = { isScreenBlanked = true }
+            )
+
+            if (isScreenBlanked) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .clickable { isScreenBlanked = false }
+                        .focusable(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "اضغط OK لإضاءة الشاشة",
+                        color = Color.White.copy(alpha = 0.12f),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+    }
+
+    private fun isTvOrCarDevice(): Boolean {
+        val packageManager = context.packageManager
+        val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        val isAutomotive = packageManager.hasSystemFeature("android.hardware.type.automotive")
+        val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+        val isCarMode = uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_CAR
+        return isTv || isAutomotive || isCarMode
     }
 
     override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) {
