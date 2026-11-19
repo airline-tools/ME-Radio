@@ -99,6 +99,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val gridState = rememberLazyGridState()
+    val activeStationScope = if (viewModel.showFavoritesOnly) viewModel.savedRadios else viewModel.filteredRadios
     val uniqueRadios = viewModel.filteredRadios.distinctBy { it.id }
     val radiosSize = uniqueRadios.size
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -122,6 +123,10 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(activeStationScope, viewModel.selectedRadio?.id) {
+        viewModel.playerRepository.updateStationQueue(activeStationScope, viewModel.selectedRadio?.id)
+    }
+
     // Open the Bookingwep radio console as the app's landing screen.
     LaunchedEffect(viewModel.selectedRadio?.id) {
         if (viewModel.selectedRadio != null) bottomSheetState.bottomSheetState.expand()
@@ -138,7 +143,7 @@ fun HomeScreen(
             viewModel.selectedRadio?.let {
                 viewModel.playerRepository.PLayerUI(
                     radio = it,
-                    stations = viewModel.filteredRadios,
+                    stations = activeStationScope,
                     savedStations = viewModel.savedRadios,
                     categories = viewModel.categories,
                     selectedCategory = viewModel.selectedCategory,
