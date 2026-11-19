@@ -64,7 +64,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.nativeKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.draw.alpha
@@ -265,8 +266,8 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                     .background(Color.Black)
                     .clickable { isScreenBlanked = false }
                     .onPreviewKeyEvent { event ->
-                        val code = event.nativeKeyEvent.keyCode
-                        if (code == KeyEvent.KEYCODE_VOLUME_UP || code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                        val key = event.key
+                        if (key == Key.VolumeUp || key == Key.VolumeDown) {
                             false
                         } else {
                             if (event.type == KeyEventType.KeyDown) isScreenBlanked = false
