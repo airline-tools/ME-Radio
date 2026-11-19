@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -80,8 +83,7 @@ fun BookingwepRadioConsole(
     onShareClick: () -> Unit,
     onWebpageClick: () -> Unit,
     statusContent: @Composable () -> Unit,
-    showScreenOffButton: Boolean = false,
-    onScreenOffClick: () -> Unit = {}
+    useStationGrid: Boolean = false
 ) {
     var showFavoritesOnly by remember { mutableStateOf(false) }
     val visibleStations = if (showFavoritesOnly) {
@@ -117,24 +119,6 @@ fun BookingwepRadioConsole(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (showScreenOffButton) {
-                    Surface(
-                        modifier = Modifier
-                            .tvFocusOutline(RoundedCornerShape(8.dp))
-                            .clickable(onClick = onScreenOffClick),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF1A2A40),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .45f))
-                    ) {
-                        Text(
-                            "◐ إطفاء الشاشة",
-                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-                            color = RadioGoldLight,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
                 Surface(
                     modifier = Modifier.size(36.dp)
                         .tvFocusOutline(CircleShape)
@@ -361,62 +345,141 @@ fun BookingwepRadioConsole(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp)
-        ) {
-            items(visibleStations, key = { it.id }) { station ->
-                val isStationSaved = savedStations.any { it.id == station.id }
-                val canTune = station.playableUrl.isNotBlank() || !station.masperoName.isNullOrBlank()
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp)
-                        .tvFocusOutline(RoundedCornerShape(10.dp))
-                        .clickable(enabled = canTune) { onStationClick(station) },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (station.id == radio.id) Color(0xFF1C304B) else Color(0xFF111F33),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (station.id == radio.id) RadioGold.copy(alpha = .6f) else Color.White.copy(alpha = .04f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+        if (useStationGrid) {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 145.dp),
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(visibleStations, key = { it.id }) { station ->
+                    val isStationSaved = savedStations.any { it.id == station.id }
+                    val canTune = station.playableUrl.isNotBlank() || !station.masperoName.isNullOrBlank()
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(82.dp)
+                            .tvFocusOutline(RoundedCornerShape(11.dp))
+                            .clickable(enabled = canTune) { onStationClick(station) },
+                        shape = RoundedCornerShape(11.dp),
+                        color = if (station.id == radio.id) Color(0xFF1C304B) else Color(0xFF111F33),
+                        border = BorderStroke(
+                            1.dp,
+                            if (station.id == radio.id) RadioGold.copy(alpha = .75f) else Color.White.copy(alpha = .08f)
+                        )
                     ) {
-                        Box(
-                            Modifier.size(8.dp).clip(CircleShape)
-                                .background(if (canTune) RadioGold else Color(0xFF687386))
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    station.name,
+                                    modifier = Modifier.weight(1f),
+                                    color = Color(0xFFF5F0E6),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    if (isStationSaved) "★" else "☆",
+                                    modifier = Modifier
+                                        .tvFocusOutline(CircleShape)
+                                        .clickable { onStationFavoriteClick(station) }
+                                        .padding(start = 7.dp),
+                                    color = if (isStationSaved) RadioGold else Color(0xFF8B95A4),
+                                    fontSize = 16.sp
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    listOfNotNull(
+                                        station.frequency?.takeIf { it.isNotBlank() && it != "000" },
+                                        station.category?.takeIf { it.isNotBlank() }
+                                    ).joinToString(" • "),
+                                    color = RadioGoldLight.copy(alpha = .82f),
+                                    fontSize = 9.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    if (station.id == radio.id && isPlaying) "LIVE" else if (canTune) "▶" else "—",
+                                    color = if (station.id == radio.id && isPlaying) RadioRed else Color(0xFF8C98A9),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp)
+            ) {
+                items(visibleStations, key = { it.id }) { station ->
+                    val isStationSaved = savedStations.any { it.id == station.id }
+                    val canTune = station.playableUrl.isNotBlank() || !station.masperoName.isNullOrBlank()
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp)
+                            .tvFocusOutline(RoundedCornerShape(10.dp))
+                            .clickable(enabled = canTune) { onStationClick(station) },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (station.id == radio.id) Color(0xFF1C304B) else Color(0xFF111F33),
+                        border = BorderStroke(
+                            1.dp,
+                            if (station.id == radio.id) RadioGold.copy(alpha = .6f) else Color.White.copy(alpha = .04f)
                         )
-                        Spacer(Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                station.name,
-                                color = Color(0xFFF5F0E6),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                Modifier.size(8.dp).clip(CircleShape)
+                                    .background(if (canTune) RadioGold else Color(0xFF687386))
                             )
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    station.name,
+                                    color = Color(0xFFF5F0E6),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    listOfNotNull(
+                                        station.frequency?.takeIf { it.isNotBlank() && it != "000" },
+                                        station.category?.takeIf { it.isNotBlank() }
+                                    ).joinToString("  •  "),
+                                    color = RadioGoldLight.copy(alpha = .8f),
+                                    fontSize = 9.sp,
+                                    maxLines = 1
+                                )
+                            }
+                            TextButton(onClick = { onStationFavoriteClick(station) }) {
+                                Text(if (isStationSaved) "★" else "☆", color = if (isStationSaved) RadioGold else Color(0xFF8B95A4), fontSize = 17.sp)
+                            }
                             Text(
-                                listOfNotNull(
-                                    station.frequency?.takeIf { it.isNotBlank() && it != "000" },
-                                    station.category?.takeIf { it.isNotBlank() }
-                                ).joinToString("  •  "),
-                                color = RadioGoldLight.copy(alpha = .8f),
-                                fontSize = 9.sp,
-                                maxLines = 1
+                                if (station.id == radio.id) "ON AIR" else if (station.url.isNotBlank()) "READY" else if (canTune) "TUNE" else "—",
+                                color = if (station.id == radio.id && isPlaying) RadioRed else Color(0xFF8C98A9),
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                        TextButton(onClick = { onStationFavoriteClick(station) }) {
-                            Text(if (isStationSaved) "★" else "☆", color = if (isStationSaved) RadioGold else Color(0xFF8B95A4), fontSize = 17.sp)
-                        }
-                        Text(
-                            if (station.id == radio.id) "ON AIR" else if (station.url.isNotBlank()) "READY" else if (canTune) "TUNE" else "—",
-                            color = if (station.id == radio.id && isPlaying) RadioRed else Color(0xFF8C98A9),
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }
