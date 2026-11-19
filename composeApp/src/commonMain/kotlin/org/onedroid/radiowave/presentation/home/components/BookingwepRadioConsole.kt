@@ -104,7 +104,7 @@ fun BookingwepRadioConsole(
                 .background(
                     Brush.linearGradient(listOf(RadioNavyLight, Color(0xFF091222)))
                 )
-                .padding(horizontal = 17.dp, vertical = 13.dp),
+                .padding(horizontal = if (useStationGrid) 24.dp else 17.dp, vertical = if (useStationGrid) 7.dp else 13.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -142,7 +142,7 @@ fun BookingwepRadioConsole(
                         listOf(Color(0xFF1B2A3F), RadioNavy, RadioNavy)
                     )
                 )
-                .padding(horizontal = 17.dp, vertical = 15.dp)
+                .padding(horizontal = if (useStationGrid) 24.dp else 17.dp, vertical = if (useStationGrid) 7.dp else 15.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -153,7 +153,7 @@ fun BookingwepRadioConsole(
                             listOf(Color(0xFF090D12), Color(0xFF030609))
                         )
                     )
-                    .padding(horizontal = 11.dp, vertical = 12.dp)
+                    .padding(horizontal = 11.dp, vertical = if (useStationGrid) 8.dp else 12.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -201,7 +201,7 @@ fun BookingwepRadioConsole(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 23.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 15.dp else 23.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -262,14 +262,14 @@ fun BookingwepRadioConsole(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 8.dp else 14.dp)
                 ) {
                     Spacer(
                         Modifier.fillMaxWidth().height(1.dp)
                             .background(RadioGold.copy(alpha = .2f))
                     )
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 7.dp else 11.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -281,12 +281,12 @@ fun BookingwepRadioConsole(
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().padding(top = 5.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 2.dp else 5.dp)) {
                 statusContent()
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 3.dp else 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -307,7 +307,7 @@ fun BookingwepRadioConsole(
         Row(
             modifier = Modifier.fillMaxWidth()
                 .background(Color(0xFF101D30))
-                .padding(horizontal = 15.dp, vertical = 10.dp),
+                .padding(horizontal = 24.dp, vertical = if (useStationGrid) 6.dp else 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -321,7 +321,7 @@ fun BookingwepRadioConsole(
 
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
-                .padding(horizontal = 10.dp, vertical = 7.dp),
+                .padding(horizontal = 20.dp, vertical = if (useStationGrid) 4.dp else 7.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             categories.forEach { category ->
@@ -347,7 +347,7 @@ fun BookingwepRadioConsole(
 
         if (useStationGrid) {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 145.dp),
+                columns = GridCells.Adaptive(minSize = 175.dp),
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -358,7 +358,7 @@ fun BookingwepRadioConsole(
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(82.dp)
+                            .height(72.dp)
                             .tvFocusOutline(RoundedCornerShape(11.dp))
                             .clickable(enabled = canTune) { onStationClick(station) },
                         shape = RoundedCornerShape(11.dp),
