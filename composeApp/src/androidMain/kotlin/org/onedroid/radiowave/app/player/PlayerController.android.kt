@@ -193,14 +193,18 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
     }
 
     override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) {
-        val playable = stations.filter { it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank() }
-        this.stationQueue = playable
-        this.currentStationId = currentStationId
+        val playable = stations.filter {
+            it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
+        }
+        stationQueue = playable
 
+        // Updating a category/favorites filter must never start a station.
+        // Only rebuild the notification queue when a stream is already loaded.
         val connected = player ?: return
-        if (playable.isEmpty()) return
-        val currentIndex = playable.indexOfFirst { it.id == currentStationId }
-            .takeIf { it >= 0 } ?: 0
+        val playingItem = connected.currentMediaItem ?: return
+        val wasPlayWhenReady = connected.playWhenReady
+        val position = connected.currentPosition.coerceAtLeast(0L)
+
         val items = playable.map { station ->
             MediaItem.Builder()
                 .setMediaId(station.id)
@@ -215,10 +219,25 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                         .build()
                 )
                 .build()
+        }.toMutableList()
+
+        // Keep the actual stream playing even if it is outside the newly
+        // selected category. The next/previous buttons then navigate into
+        // the newly selected list without changing stations immediately.
+        val currentId = playingItem.mediaId
+        var currentIndex = items.indexOfFirst { it.mediaId == currentId }
+        if (currentIndex < 0) {
+            items.add(0, playingItem)
+            currentIndex = 0
+        } else {
+            // Retain the exact current media item (including its stream URL
+            // and Referer metadata) instead of replacing it with catalog data.
+            items[currentIndex] = playingItem
         }
-        connected.setMediaItems(items, currentIndex, 0L)
+
+        connected.setMediaItems(items, currentIndex, position)
         connected.prepare()
-        connected.play()
+        connected.playWhenReady = wasPlayWhenReady
     }
 
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
