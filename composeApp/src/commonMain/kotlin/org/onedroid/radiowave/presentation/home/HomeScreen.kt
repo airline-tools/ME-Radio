@@ -44,6 +44,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -107,6 +110,8 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val urlHandler = LocalUriHandler.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val deviceConfiguration = LocalConfiguration.current
+    val useWideRadioLayout = deviceConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE && deviceConfiguration.screenWidthDp >= 700
 
     // The initial catalog load happens in ViewModel init. Skip the first
     // ON_RESUME event to avoid duplicate startup requests, then refresh every
@@ -136,6 +141,7 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = bottomSheetState,
         sheetContainerColor = Color(0xFF0B1728),
+        sheetMaxWidth = if (useWideRadioLayout) Dp.Unspecified else BottomSheetDefaults.SheetMaxWidth,
         sheetContentColor = Color(0xFFF5F0E6),
         sheetSwipeEnabled = false,
         containerColor = Color(0xFF081321),
