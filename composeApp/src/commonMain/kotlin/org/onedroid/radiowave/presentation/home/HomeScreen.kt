@@ -3,6 +3,7 @@ package org.onedroid.radiowave.presentation.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -140,6 +141,7 @@ fun HomeScreen(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = bottomSheetState,
         sheetContainerColor = Color(0xFF0B1728),
+        sheetShape = RectangleShape,
         sheetMaxWidth = if (useWideRadioLayout) Dp.Unspecified else BottomSheetDefaults.SheetMaxWidth,
         sheetContentColor = Color(0xFFF5F0E6),
         sheetSwipeEnabled = false,
