@@ -25,6 +25,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Keep the same Android debug signing key between CI runs so updates
+      # can be installed over the previous APK instead of failing signature checks.
+      - name: Restore persistent Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: me-radio-android-debug-keystore-v1
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
