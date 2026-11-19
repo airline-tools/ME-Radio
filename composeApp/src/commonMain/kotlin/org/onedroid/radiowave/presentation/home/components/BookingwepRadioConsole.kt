@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -106,6 +107,7 @@ fun BookingwepRadioConsole(
                 .background(
                     Brush.linearGradient(listOf(RadioNavyLight, Color(0xFF091222)))
                 )
+                .then(if (useStationGrid) Modifier else Modifier.statusBarsPadding())
                 .padding(horizontal = if (useStationGrid) 24.dp else 17.dp, vertical = if (useStationGrid) 7.dp else 13.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
