@@ -123,7 +123,7 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(activeStationScope, viewModel.selectedRadio?.id) {
+    LaunchedEffect(activeStationScope) {
         viewModel.playerRepository.updateStationQueue(activeStationScope, viewModel.selectedRadio?.id)
     }
 
