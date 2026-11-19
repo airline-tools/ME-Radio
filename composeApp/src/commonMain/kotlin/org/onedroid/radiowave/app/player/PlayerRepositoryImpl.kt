@@ -10,6 +10,10 @@ class PlayerRepositoryImpl(
         playerController.play(audioUrl, referer, stationName)
     }
 
+    override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) {
+        playerController.updateStationQueue(stations, currentStationId)
+    }
+
     @Composable
     override fun PLayerUI(
         radio: Radio,
