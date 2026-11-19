@@ -83,7 +83,9 @@ fun BookingwepRadioConsole(
     onShareClick: () -> Unit,
     onWebpageClick: () -> Unit,
     statusContent: @Composable () -> Unit,
-    useStationGrid: Boolean = false
+    useStationGrid: Boolean = false,
+    showScreenOffButton: Boolean = false,
+    onScreenOffClick: () -> Unit = {}
 ) {
     var showFavoritesOnly by remember { mutableStateOf(false) }
     val visibleStations = if (showFavoritesOnly) {
@@ -119,13 +121,31 @@ fun BookingwepRadioConsole(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (showScreenOffButton) {
+                    Surface(
+                        modifier = Modifier
+                            .tvFocusOutline(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onScreenOffClick),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF1A2A40),
+                        border = BorderStroke(1.dp, RadioGold.copy(alpha = .45f))
+                    ) {
+                        Text(
+                            "◐ إطفاء الشاشة",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            color = RadioGoldLight,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 Surface(
                     modifier = Modifier.size(36.dp)
                         .tvFocusOutline(CircleShape)
                         .clickable(onClick = onCloseClick),
                     shape = CircleShape,
                     color = Color(0xFF1A2A40),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .35f))
+                    border = BorderStroke(1.dp, RadioGold.copy(alpha = .35f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text("×", color = RadioGoldLight, fontSize = 23.sp)
@@ -259,11 +279,7 @@ fun BookingwepRadioConsole(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = if (useStationGrid) 8.dp else 14.dp)
-                ) {
+                    Spacer(Modifier.height(if (useStationGrid) 7.dp else 12.dp))
                     Spacer(
                         Modifier.fillMaxWidth().height(1.dp)
                             .background(RadioGold.copy(alpha = .2f))
