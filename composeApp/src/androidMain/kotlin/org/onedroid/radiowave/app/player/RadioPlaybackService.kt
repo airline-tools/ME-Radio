@@ -164,7 +164,7 @@ class RadioPlaybackService : MediaLibraryService() {
                     val streamUrl = station.playableUrl.takeIf { it.isNotBlank() } ?: savedUrl
                     if (streamUrl == null) station
                     else station.copy(url = streamUrl, urlResolved = streamUrl)
-                }.filter { it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank() }
+                }.filter { it.playableUrl.isNotBlank() }
                 savedStationIds = saved.mapTo(mutableSetOf()) { it.id }
 
                 launch(Dispatchers.Main) {
