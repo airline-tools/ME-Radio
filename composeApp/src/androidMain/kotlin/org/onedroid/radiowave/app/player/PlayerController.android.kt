@@ -17,6 +17,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.WindowManager
+import android.view.View
+import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -61,6 +63,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.nativeKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -181,15 +187,41 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         val originalScreenBrightness = remember(hostWindow) {
             hostWindow?.attributes?.screenBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
+        val originalSystemUiVisibility = remember(hostWindow) {
+            hostWindow?.decorView?.systemUiVisibility ?: 0
+        }
+        val originalStatusBarColor = remember(hostWindow) { hostWindow?.statusBarColor ?: android.graphics.Color.BLACK }
+        val originalNavigationBarColor = remember(hostWindow) { hostWindow?.navigationBarColor ?: android.graphics.Color.BLACK }
 
         DisposableEffect(hostWindow, isScreenBlanked) {
             hostWindow?.let { window ->
-                window.attributes = window.attributes.apply {
-                    screenBrightness = if (isScreenBlanked) 0f else originalScreenBrightness
+                if (isScreenBlanked) {
+                    window.statusBarColor = android.graphics.Color.BLACK
+                    window.navigationBarColor = android.graphics.Color.BLACK
+                    window.decorView.systemUiVisibility =
+                        View.SYSTEM_UI_FLAG_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    window.attributes = window.attributes.apply {
+                        screenBrightness = 0f
+                    }
+                } else {
+                    window.decorView.systemUiVisibility = originalSystemUiVisibility
+                    window.statusBarColor = originalStatusBarColor
+                    window.navigationBarColor = originalNavigationBarColor
+                    window.attributes = window.attributes.apply {
+                        screenBrightness = originalScreenBrightness
+                    }
                 }
             }
             onDispose {
                 hostWindow?.let { window ->
+                    window.decorView.systemUiVisibility = originalSystemUiVisibility
+                    window.statusBarColor = originalStatusBarColor
+                    window.navigationBarColor = originalNavigationBarColor
                     window.attributes = window.attributes.apply {
                         screenBrightness = originalScreenBrightness
                     }
@@ -232,6 +264,15 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                     .fillMaxSize()
                     .background(Color.Black)
                     .clickable { isScreenBlanked = false }
+                    .onPreviewKeyEvent { event ->
+                        val code = event.nativeKeyEvent.keyCode
+                        if (code == KeyEvent.KEYCODE_VOLUME_UP || code == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                            false
+                        } else {
+                            if (event.type == KeyEventType.KeyDown) isScreenBlanked = false
+                            true
+                        }
+                    }
                     .focusable()
             )
         }
