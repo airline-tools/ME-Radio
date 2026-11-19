@@ -63,6 +63,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.Key
@@ -183,6 +185,10 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         val isPlayingState by isPlaying.collectAsState()
         val useStationGrid = remember { isTvOrCarDevice() }
         var isScreenBlanked by remember { mutableStateOf(false) }
+        val screenOffFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(isScreenBlanked) {
+            if (isScreenBlanked) screenOffFocusRequester.requestFocus()
+        }
         val hostView = LocalView.current
         val hostWindow = remember(hostView) { hostView.context.findActivity()?.window }
         val originalScreenBrightness = remember(hostWindow) {
@@ -265,12 +271,15 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                     .fillMaxSize()
                     .background(Color.Black)
                     .clickable { isScreenBlanked = false }
+                    .focusRequester(screenOffFocusRequester)
                     .onPreviewKeyEvent { event ->
-                        val key = event.key
-                        if (key == Key.VolumeUp || key == Key.VolumeDown) {
+                        // Volume keys must continue changing audio without waking the display.
+                        if (event.key == Key.VolumeUp || event.key == Key.VolumeDown) {
                             false
                         } else {
-                            if (event.type == KeyEventType.KeyDown) isScreenBlanked = false
+                            if (event.type == KeyEventType.KeyDown) {
+                                isScreenBlanked = false
+                            }
                             true
                         }
                     }
