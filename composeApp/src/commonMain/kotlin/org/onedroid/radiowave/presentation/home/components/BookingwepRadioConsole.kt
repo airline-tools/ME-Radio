@@ -64,6 +64,7 @@ fun BookingwepRadioConsole(
     categories: List<String>,
     selectedCategory: String,
     onCategoryClick: (String) -> Unit,
+    onFavoritesClick: () -> Unit,
     onCloseClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
@@ -145,7 +146,10 @@ fun BookingwepRadioConsole(
                     verticalAlignment = Alignment.Top
                 ) {
                     Surface(
-                        modifier = Modifier.clickable(onClick = { showFavoritesOnly = !showFavoritesOnly }),
+                        modifier = Modifier.clickable(onClick = {
+                            showFavoritesOnly = !showFavoritesOnly
+                            onFavoritesClick()
+                        }),
                         shape = RoundedCornerShape(5.dp),
                         color = if (showFavoritesOnly) RadioGold else RadioGold.copy(alpha = .09f),
                         border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .5f))
