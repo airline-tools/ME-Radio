@@ -34,6 +34,9 @@ class RadioPlaybackService : MediaSessionService() {
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            RadioPlaybackConfig.referer = mediaItem?.mediaMetadata?.extras
+                ?.getString("me_radio_referer")
+                ?.takeIf { it.startsWith("https://") }
             retryCount = 0
             retryRunnable?.let(mainHandler::removeCallbacks)
             retryRunnable = null
