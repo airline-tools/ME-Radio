@@ -140,13 +140,13 @@ fun HomeScreen(
     BottomSheetScaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = bottomSheetState,
-        sheetContainerColor = Color(0xFF0B1728),
+        sheetContainerColor = Color.Black,
         sheetShape = RectangleShape,
         sheetMaxWidth = if (useWideRadioLayout) Dp.Unspecified else BottomSheetDefaults.SheetMaxWidth,
         sheetContentColor = Color(0xFFF5F0E6),
         sheetSwipeEnabled = false,
         sheetDragHandle = null,
-        containerColor = Color(0xFF081321),
+        containerColor = Color.Black,
         sheetContent = {
             viewModel.selectedRadio?.let {
                 viewModel.playerRepository.PLayerUI(
@@ -190,7 +190,7 @@ fun HomeScreen(
         // console is the app's landing screen; show only a dark loading surface
         // until the station catalogue selects its initial station.
         Box(
-            modifier = Modifier.fillMaxSize().background(Color(0xFF081321)),
+            modifier = Modifier.fillMaxSize().background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
             if (viewModel.selectedRadio == null) {
