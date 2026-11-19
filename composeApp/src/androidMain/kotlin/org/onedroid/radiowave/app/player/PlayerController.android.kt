@@ -227,7 +227,14 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         val isAutomotive = packageManager.hasSystemFeature("android.hardware.type.automotive")
         val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
         val isCarMode = uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_CAR
-        return isTv || isAutomotive || isCarMode
+        // Many aftermarket Android head units identify as ordinary Android
+        // devices. Their wide, short landscape display is a useful fallback.
+        val config = context.resources.configuration
+        val isHeadUnitLayout =
+            config.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            config.screenWidthDp >= 700 &&
+            config.screenHeightDp <= 650
+        return isTv || isAutomotive || isCarMode || isHeadUnitLayout
     }
 
     override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) {
