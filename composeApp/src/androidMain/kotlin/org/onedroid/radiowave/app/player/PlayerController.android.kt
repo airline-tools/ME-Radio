@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.content.Context
+import android.app.Activity
+import android.content.ContextWrapper
 import android.app.UiModeManager
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -170,7 +172,29 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
     ) {
         val isPlayingState by isPlaying.collectAsState()
         val useStationGrid = remember { isTvOrCarDevice() }
+        var isScreenBlanked by remember { mutableStateOf(false) }
+        val hostView = LocalView.current
+        val hostWindow = remember(hostView) { hostView.context.findActivity()?.window }
+        val originalScreenBrightness = remember(hostWindow) {
+            hostWindow?.attributes?.screenBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
 
+        DisposableEffect(hostWindow, isScreenBlanked) {
+            hostWindow?.let { window ->
+                window.attributes = window.attributes.apply {
+                    screenBrightness = if (isScreenBlanked) 0f else originalScreenBrightness
+                }
+            }
+            onDispose {
+                hostWindow?.let { window ->
+                    window.attributes = window.attributes.apply {
+                        screenBrightness = originalScreenBrightness
+                    }
+                }
+            }
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
         BookingwepRadioConsole(
             radio = radio,
             stations = stations,
@@ -195,8 +219,20 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
             onShareClick = onShareClick,
             onWebpageClick = onWebpageClick,
             statusContent = { PlayerStatusIndicator(onRetryClick) },
-            useStationGrid = useStationGrid
+            useStationGrid = useStationGrid,
+            showScreenOffButton = useStationGrid,
+            onScreenOffClick = { isScreenBlanked = true }
         )
+        if (isScreenBlanked) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable { isScreenBlanked = false }
+                    .focusable()
+            )
+        }
+        }
     }
 
     private fun isTvOrCarDevice(): Boolean {
@@ -690,4 +726,10 @@ sealed class MetadataState {
     data object Detecting : MetadataState()
     data object NotAvailable : MetadataState()
     data class Available(val content: String) : MetadataState()
+}
+
+private fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
