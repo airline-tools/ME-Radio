@@ -28,7 +28,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -170,11 +169,9 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         onCloseClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
-        val showScreenOffButton = remember { isTvOrCarDevice() }
-        var isScreenBlanked by remember { mutableStateOf(false) }
+        val useStationGrid = remember { isTvOrCarDevice() }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            BookingwepRadioConsole(
+        BookingwepRadioConsole(
             radio = radio,
             stations = stations,
             savedStations = savedStations,
@@ -198,26 +195,7 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
             onShareClick = onShareClick,
             onWebpageClick = onWebpageClick,
             statusContent = { PlayerStatusIndicator(onRetryClick) },
-            showScreenOffButton = showScreenOffButton,
-            onScreenOffClick = { isScreenBlanked = true }
-            )
-
-            if (isScreenBlanked) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                        .clickable { isScreenBlanked = false }
-                        .focusable(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "اضغط OK لإضاءة الشاشة",
-                        color = Color.White.copy(alpha = 0.12f),
-                        fontSize = 11.sp
-                    )
-                }
-            }
+            useStationGrid = useStationGrid
         }
     }
 
