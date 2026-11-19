@@ -114,6 +114,8 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
     private var player: MediaController? = null
     private var playerFuture: ListenableFuture<MediaController>? = null
     private var pendingPlayback: PendingPlayback? = null
+    private var stationQueue: List<Radio> = emptyList()
+    private var currentStationId: String? = null
     private val mainExecutor = Executor { command ->
         Handler(Looper.getMainLooper()).post(command)
     }
@@ -190,6 +192,35 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         )
     }
 
+    override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) {
+        val playable = stations.filter { it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank() }
+        this.stationQueue = playable
+        this.currentStationId = currentStationId
+
+        val connected = player ?: return
+        if (playable.isEmpty()) return
+        val currentIndex = playable.indexOfFirst { it.id == currentStationId }
+            .takeIf { it >= 0 } ?: 0
+        val items = playable.map { station ->
+            MediaItem.Builder()
+                .setMediaId(station.id)
+                .setUri(station.playableUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(station.name)
+                        .setArtist("ME Radio")
+                        .setExtras(android.os.Bundle().apply {
+                            putString("me_radio_referer", station.streamReferer)
+                        })
+                        .build()
+                )
+                .build()
+        }
+        connected.setMediaItems(items, currentIndex, 0L)
+        connected.prepare()
+        connected.play()
+    }
+
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
         if (audioUrl.isBlank()) return
         pendingPlayback = PendingPlayback(audioUrl, referer, stationName)
@@ -258,18 +289,42 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         // the next stream request, preserving Maspero's Referer behavior.
         RadioPlaybackConfig.referer = referer?.takeIf { it.startsWith("https://") }
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(audioUrl)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(stationName?.takeIf { it.isNotBlank() } ?: "ME Radio")
-                    .setArtist("ME Radio")
-                    .build()
-            )
-            .build()
-
-        connectedPlayer.clearMediaItems()
-        connectedPlayer.setMediaItem(mediaItem)
+        val queuedItems = stationQueue.map { station ->
+            MediaItem.Builder()
+                .setMediaId(station.id)
+                .setUri(station.playableUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(station.name)
+                        .setArtist("ME Radio")
+                        .setExtras(android.os.Bundle().apply {
+                            putString("me_radio_referer", station.streamReferer)
+                        })
+                        .build()
+                )
+                .build()
+        }
+        val selectedIndex = stationQueue.indexOfFirst { it.id == currentStationId }
+            .takeIf { it >= 0 }
+            ?: queuedItems.indexOfFirst { it.localConfiguration?.uri?.toString() == audioUrl }
+                .takeIf { it >= 0 }
+        if (queuedItems.isNotEmpty() && selectedIndex != null) {
+            connectedPlayer.setMediaItems(queuedItems, selectedIndex, 0L)
+        } else {
+            val mediaItem = MediaItem.Builder()
+                .setUri(audioUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(stationName?.takeIf { it.isNotBlank() } ?: "ME Radio")
+                        .setArtist("ME Radio")
+                        .setExtras(android.os.Bundle().apply {
+                            putString("me_radio_referer", referer)
+                        })
+                        .build()
+                )
+                .build()
+            connectedPlayer.setMediaItem(mediaItem)
+        }
         _metadataState.value = MetadataState.Detecting
         connectedPlayer.prepare()
         connectedPlayer.play()
