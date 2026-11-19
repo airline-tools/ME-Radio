@@ -93,6 +93,9 @@ class RadioPlaybackService : MediaSessionService() {
                     true
                 )
                 setHandleAudioBecomingNoisy(true)
+                // Make notification previous/next controls wrap around
+                // within the active category/favorites playlist.
+                repeatMode = Player.REPEAT_MODE_ALL
                 addListener(playerListener)
             }
 
