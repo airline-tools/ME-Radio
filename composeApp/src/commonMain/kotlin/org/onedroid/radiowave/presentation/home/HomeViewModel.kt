@@ -50,6 +50,20 @@ class HomeViewModel(
     var savedRadios by mutableStateOf<List<Radio>>(emptyList())
         private set
 
+    var showFavoritesOnly by mutableStateOf(false)
+        private set
+
+    private val navigationRadios: List<Radio>
+        get() {
+            val source = if (showFavoritesOnly) {
+                val savedIds = savedRadios.mapTo(mutableSetOf()) { it.id }
+                radios.filter { it.id in savedIds }
+            } else filteredRadios
+            return source.filter {
+                it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
+            }
+        }
+
     var isLoading by mutableStateOf(false)
         private set
 
@@ -109,7 +123,14 @@ class HomeViewModel(
     }
 
     fun selectCategory(category: String) {
+        if (selectedCategory == category) return
+        stopAutoSearch()
         selectedCategory = category
+    }
+
+    fun toggleFavoritesOnly() {
+        stopAutoSearch()
+        showFavoritesOnly = !showFavoritesOnly
     }
 
     fun play(streamUrl: String) {
@@ -228,22 +249,8 @@ class HomeViewModel(
     fun playNext() = playRelativeStation(1)
 
     private fun playRelativeStation(direction: Int) {
-        // Favorite mode takes priority when AUTO starts on a saved station.
-        // Otherwise filteredRadios already represents the selected category,
-        // or the complete catalog when "الكل" is selected.
-        val currentStation = selectedRadio
-        val currentIsFavorite = currentStation != null &&
-            savedRadios.any { it.id == currentStation.id }
-        val scanSource = if (currentIsFavorite && savedRadios.isNotEmpty()) {
-            savedRadios.map { saved ->
-                radios.firstOrNull { it.id == saved.id } ?: saved
-            }
-        } else {
-            filteredRadios
-        }
-        val available = scanSource.filter {
-            it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
-        }
+        // Previous/next follow the same active scope as AUTO scan.
+        val available = navigationRadios
         if (available.isEmpty()) return
         val currentIndex = available.indexOfFirst { it.id == selectedRadio?.id }
         val nextIndex = if (currentIndex < 0) {
@@ -260,9 +267,7 @@ class HomeViewModel(
             return
         }
 
-        val available = filteredRadios.filter {
-            it.playableUrl.isNotBlank() || !it.masperoName.isNullOrBlank()
-        }
+        val available = navigationRadios
         if (available.isEmpty()) return
 
         isAutoSearch = true
