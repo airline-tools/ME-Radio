@@ -143,6 +143,7 @@ fun HomeScreen(
         sheetMaxWidth = if (useWideRadioLayout) Dp.Unspecified else BottomSheetDefaults.SheetMaxWidth,
         sheetContentColor = Color(0xFFF5F0E6),
         sheetSwipeEnabled = false,
+        sheetDragHandle = null,
         containerColor = Color(0xFF081321),
         sheetContent = {
             viewModel.selectedRadio?.let {
