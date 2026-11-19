@@ -79,7 +79,9 @@ fun BookingwepRadioConsole(
     onStationClick: (Radio) -> Unit,
     onShareClick: () -> Unit,
     onWebpageClick: () -> Unit,
-    statusContent: @Composable () -> Unit
+    statusContent: @Composable () -> Unit,
+    showScreenOffButton: Boolean = false,
+    onScreenOffClick: () -> Unit = {}
 ) {
     var showFavoritesOnly by remember { mutableStateOf(false) }
     val visibleStations = if (showFavoritesOnly) {
@@ -111,16 +113,39 @@ fun BookingwepRadioConsole(
                     Text("الراديو", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
-            Surface(
-                modifier = Modifier.size(36.dp)
-                    .tvFocusOutline(CircleShape)
-                    .clickable(onClick = onCloseClick),
-                shape = CircleShape,
-                color = Color(0xFF1A2A40),
-                border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .35f))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("×", color = RadioGoldLight, fontSize = 23.sp)
+                if (showScreenOffButton) {
+                    Surface(
+                        modifier = Modifier
+                            .tvFocusOutline(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onScreenOffClick),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF1A2A40),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .45f))
+                    ) {
+                        Text(
+                            "◐ إطفاء الشاشة",
+                            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+                            color = RadioGoldLight,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Surface(
+                    modifier = Modifier.size(36.dp)
+                        .tvFocusOutline(CircleShape)
+                        .clickable(onClick = onCloseClick),
+                    shape = CircleShape,
+                    color = Color(0xFF1A2A40),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .35f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("×", color = RadioGoldLight, fontSize = 23.sp)
+                    }
                 }
             }
         }
@@ -253,7 +278,7 @@ fun BookingwepRadioConsole(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 112.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
                 ) {
                     Spacer(
                         Modifier.fillMaxWidth().height(1.dp)
