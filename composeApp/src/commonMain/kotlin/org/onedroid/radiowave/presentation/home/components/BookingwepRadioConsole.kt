@@ -2,6 +2,7 @@ package org.onedroid.radiowave.presentation.home.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -108,7 +112,9 @@ fun BookingwepRadioConsole(
                 }
             }
             Surface(
-                modifier = Modifier.size(36.dp).clickable(onClick = onCloseClick),
+                modifier = Modifier.size(36.dp)
+                    .tvFocusOutline(CircleShape)
+                    .clickable(onClick = onCloseClick),
                 shape = CircleShape,
                 color = Color(0xFF1A2A40),
                 border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = .35f))
@@ -146,7 +152,9 @@ fun BookingwepRadioConsole(
                     verticalAlignment = Alignment.Top
                 ) {
                     Surface(
-                        modifier = Modifier.clickable(onClick = {
+                        modifier = Modifier
+                            .tvFocusOutline(RoundedCornerShape(5.dp))
+                            .clickable(onClick = {
                             showFavoritesOnly = !showFavoritesOnly
                             onFavoritesClick()
                         }),
@@ -310,7 +318,9 @@ fun BookingwepRadioConsole(
             categories.forEach { category ->
                 val selected = selectedCategory == category
                 Surface(
-                    modifier = Modifier.clickable { onCategoryClick(category) },
+                    modifier = Modifier
+                        .tvFocusOutline(RoundedCornerShape(7.dp))
+                        .clickable { onCategoryClick(category) },
                     shape = RoundedCornerShape(7.dp),
                     color = if (selected) RadioGold else Color(0xFF17263B),
                     border = androidx.compose.foundation.BorderStroke(1.dp, RadioGold.copy(alpha = if (selected) 1f else .18f))
@@ -336,6 +346,7 @@ fun BookingwepRadioConsole(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 3.dp)
+                        .tvFocusOutline(RoundedCornerShape(10.dp))
                         .clickable(enabled = canTune) { onStationClick(station) },
                     shape = RoundedCornerShape(10.dp),
                     color = if (station.id == radio.id) Color(0xFF1C304B) else Color(0xFF111F33),
@@ -404,6 +415,7 @@ private fun RadioControl(
     Surface(
         modifier = Modifier
             .size(width = if (compact) 43.dp else if (main) 43.dp else 37.dp, height = if (main) 43.dp else 37.dp)
+            .tvFocusOutline(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = Color.Transparent,
@@ -495,4 +507,21 @@ private fun SevenSegmentFrequency(value: String) {
             }
         }
     }
+}
+
+
+/**
+ * Visible gold focus ring for Android TV remotes and hardware-key navigation.
+ * Clickable supplies the actual focus target; this modifier only highlights it.
+ */
+@Composable
+private fun Modifier.tvFocusOutline(shape: Shape): Modifier {
+    var focused by remember { mutableStateOf(false) }
+    return this
+        .onFocusChanged { focused = it.isFocused }
+        .border(
+            if (focused) BorderStroke(2.dp, RadioGold)
+            else BorderStroke(0.dp, Color.Transparent),
+            shape
+        )
 }
