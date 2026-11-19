@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalConfiguration
-import android.content.res.Configuration
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -111,7 +110,7 @@ fun HomeScreen(
     val urlHandler = LocalUriHandler.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val deviceConfiguration = LocalConfiguration.current
-    val useWideRadioLayout = deviceConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE && deviceConfiguration.screenWidthDp >= 700
+    val useWideRadioLayout = deviceConfiguration.screenWidthDp >= 700 && deviceConfiguration.screenHeightDp <= 650
 
     // The initial catalog load happens in ViewModel init. Skip the first
     // ON_RESUME event to avoid duplicate startup requests, then refresh every
