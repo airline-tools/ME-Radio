@@ -202,9 +202,6 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         // Only rebuild the notification queue when a stream is already loaded.
         val connected = player ?: return
         val playingItem = connected.currentMediaItem ?: return
-        val wasPlayWhenReady = connected.playWhenReady
-        val position = connected.currentPosition.coerceAtLeast(0L)
-
         val items = playable.map { station ->
             MediaItem.Builder()
                 .setMediaId(station.id)
@@ -221,23 +218,34 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                 .build()
         }.toMutableList()
 
-        // Keep the actual stream playing even if it is outside the newly
-        // selected category. The next/previous buttons then navigate into
-        // the newly selected list without changing stations immediately.
+        // Keep the current MediaItem alive. Replacing the complete playlist
+        // with setMediaItems() causes live streams to reconnect on every
+        // category change, even when the selected station did not change.
         val currentId = playingItem.mediaId
-        var currentIndex = items.indexOfFirst { it.mediaId == currentId }
-        if (currentIndex < 0) {
+        val targetCurrentIndex = items.indexOfFirst { it.mediaId == currentId }
+        val currentQueueIndex = connected.currentMediaItemIndex
+
+        if (targetCurrentIndex < 0) {
+            // Keep the playing station as an anchor, then queue the new scope.
             items.add(0, playingItem)
-            currentIndex = 0
         } else {
-            // Retain the exact current media item (including its stream URL
-            // and Referer metadata) instead of replacing it with catalog data.
-            items[currentIndex] = playingItem
+            // Preserve the exact active item, including its URL and Referer.
+            items[targetCurrentIndex] = playingItem
         }
 
-        connected.setMediaItems(items, currentIndex, position)
-        connected.prepare()
-        connected.playWhenReady = wasPlayWhenReady
+        val beforeCurrent = items.take(if (targetCurrentIndex < 0) 0 else targetCurrentIndex)
+        val afterCurrent = items.drop(if (targetCurrentIndex < 0) 1 else targetCurrentIndex + 1)
+
+        // Remove and insert only the items around the active item. ExoPlayer
+        // keeps the current live stream and its playback position untouched.
+        connected.removeMediaItems(currentQueueIndex + 1, connected.mediaItemCount)
+        connected.removeMediaItems(0, currentQueueIndex)
+        if (beforeCurrent.isNotEmpty()) {
+            connected.addMediaItems(0, beforeCurrent)
+        }
+        if (afterCurrent.isNotEmpty()) {
+            connected.addMediaItems(beforeCurrent.size + 1, afterCurrent)
+        }
     }
 
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
@@ -584,15 +592,8 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
                 )
 
                 playbackState.intValue == Player.STATE_READY || isPlayingState -> {
-                    val totalSeconds = position / 1000
-                    val hours = totalSeconds / 3600
-                    val minutes = (totalSeconds % 3600) / 60
-                    val seconds = totalSeconds % 60
-                    Text(
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.width(65.dp),
-                        text = String.format("%d:%02d:%02d", hours, minutes, seconds)
-                    )
+                    // Live radio has no meaningful elapsed-time counter.
+                    Spacer(modifier = Modifier.width(65.dp))
                 }
 
                 else -> Text(stringResource(Res.string.now_playing))
