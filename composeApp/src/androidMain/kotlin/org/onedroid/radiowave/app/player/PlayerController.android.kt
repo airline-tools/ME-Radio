@@ -196,7 +196,7 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
             onWebpageClick = onWebpageClick,
             statusContent = { PlayerStatusIndicator(onRetryClick) },
             useStationGrid = useStationGrid
-        }
+        )
     }
 
     private fun isTvOrCarDevice(): Boolean {
