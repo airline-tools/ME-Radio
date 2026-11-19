@@ -46,6 +46,7 @@ class RadioPlaybackService : MediaLibraryService() {
     private val categories = listOf("اغاني", "منوعات", "رياضة", "دراما", "قرآن", "اخبار")
     private val rootId = "me-radio-root"
     private val favoritesId = "me-radio-favorites"
+    private val allStationsId = "category:all"
 
     private val libraryCallback = object : MediaLibrarySession.Callback {
         override fun onGetLibraryRoot(
@@ -167,9 +168,11 @@ class RadioPlaybackService : MediaLibraryService() {
 
                 launch(Dispatchers.Main) {
                     if (::mediaLibrarySession.isInitialized) {
-                        mediaLibrarySession.notifyChildrenChanged(rootId, categories.size + 1, null)
-                        categories.forEach {
-                            mediaLibrarySession.notifyChildrenChanged(categoryId(it), 0, null)
+                        mediaLibrarySession.notifyChildrenChanged(rootId, categories.size + 2, null)
+                        mediaLibrarySession.notifyChildrenChanged(allStationsId, libraryStations.size, null)
+                        categories.forEach { category ->
+                            val count = libraryStations.count { it.category == category }
+                            mediaLibrarySession.notifyChildrenChanged(categoryId(category), count, null)
                         }
                         mediaLibrarySession.notifyChildrenChanged(favoritesId, savedStationIds.size, null)
                     }
@@ -181,8 +184,9 @@ class RadioPlaybackService : MediaLibraryService() {
     }
 
     private fun childrenFor(parentId: String): List<MediaItem> = when {
-        parentId == rootId -> categories.map { browsableItem(categoryId(it), it) } +
-            browsableItem(favoritesId, "المفضلة")
+        parentId == rootId -> listOf(browsableItem(allStationsId, "كل المحطات")) +
+            categories.map { browsableItem(categoryId(it), it) } + browsableItem(favoritesId, "المفضلة")
+        parentId == allStationsId -> libraryStations.map(::playableItem)
         parentId == favoritesId -> libraryStations
             .filter { it.id in savedStationIds }
             .map(::playableItem)
@@ -196,6 +200,7 @@ class RadioPlaybackService : MediaLibraryService() {
     private fun findLibraryItem(mediaId: String): MediaItem? {
         if (mediaId == rootId) return browsableItem(rootId, "ME Radio")
         if (mediaId == favoritesId) return browsableItem(favoritesId, "المفضلة")
+        if (mediaId == allStationsId) return browsableItem(allStationsId, "كل المحطات")
         categories.firstOrNull { categoryId(it) == mediaId }?.let {
             return browsableItem(mediaId, it)
         }
