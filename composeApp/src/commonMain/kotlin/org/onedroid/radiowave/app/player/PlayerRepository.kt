@@ -18,6 +18,7 @@ interface PlayerRepository {
         playerMessage: String?,
         isAutoSearch: Boolean,
         onCategoryClick: (String) -> Unit,
+        onFavoritesClick: () -> Unit,
         onStationClick: (Radio) -> Unit,
         onStationFavoriteClick: (Radio) -> Unit,
         onPreviousClick: () -> Unit,
