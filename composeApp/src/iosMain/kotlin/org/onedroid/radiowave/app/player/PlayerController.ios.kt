@@ -42,6 +42,8 @@ import org.onedroid.radiowave.presentation.home.components.PlayerFullWidthView
 import org.onedroid.radiowave.presentation.home.components.RadioActionButtons
 import org.onedroid.radiowave.presentation.home.components.RadioDetails
 import platform.AVFoundation.AVPlayer
+import platform.AVFAudio.AVAudioSession
+import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayerItem
 import platform.AVFoundation.addPeriodicTimeObserverForInterval
 import platform.AVFoundation.currentTime
@@ -84,6 +86,7 @@ actual class PlayerController : PlayerRepository {
     override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) = Unit
 
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
+        activateAudioSession()
         val url = NSURL(string = audioUrl)
         val item = AVPlayerItem(uRL = url)
         player.replaceCurrentItemWithPlayerItem(item)
@@ -91,6 +94,12 @@ actual class PlayerController : PlayerRepository {
         _isPlaying.value = true
         startPositionTracking()
         startMetadataDetection(item)
+    }
+
+    private fun activateAudioSession() {
+        val audioSession = AVAudioSession.sharedInstance()
+        audioSession.setCategory(AVAudioSessionCategoryPlayback, error = null)
+        audioSession.setActive(true, error = null)
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -126,6 +135,7 @@ actual class PlayerController : PlayerRepository {
         playerMessage: String?,
         isAutoSearch: Boolean,
         onCategoryClick: (String) -> Unit,
+        onFavoritesClick: () -> Unit,
         onStationClick: (Radio) -> Unit,
         onStationFavoriteClick: (Radio) -> Unit,
         onPreviousClick: () -> Unit,
@@ -150,6 +160,7 @@ actual class PlayerController : PlayerRepository {
             categories = categories,
             selectedCategory = selectedCategory,
             onCategoryClick = onCategoryClick,
+            onFavoritesClick = onFavoritesClick,
             onCloseClick = onCloseClick,
             onPlayPauseClick = { pauseResume() },
             onPreviousClick = onPreviousClick,
