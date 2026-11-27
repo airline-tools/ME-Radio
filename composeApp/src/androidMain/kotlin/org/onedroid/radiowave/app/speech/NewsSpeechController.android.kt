@@ -12,20 +12,26 @@ actual class NewsSpeechController actual constructor(context: Any) {
     private var completion: (() -> Unit)? = null
     private var pendingText: String? = null
     private var ready = false
-    private val engine = TextToSpeech((context as Context).applicationContext) { status ->
-        ready = status == TextToSpeech.SUCCESS
-        if (ready) {
-            val language = engineSafeLanguage()
-            engine.setLanguage(language)
-            engine.setSpeechRate(1.0f)
-            pendingText?.let { text ->
-                pendingText = null
-                speakNow(text)
-            }
-        }
-    }
+    private lateinit var engine: TextToSpeech
 
     init {
+        engine = TextToSpeech((context as Context).applicationContext) { status ->
+            ready = status == TextToSpeech.SUCCESS
+            if (ready) {
+                val arabic = Locale("ar", "EG")
+                val languageStatus = engine.setLanguage(arabic)
+                if (languageStatus == TextToSpeech.LANG_MISSING_DATA ||
+                    languageStatus == TextToSpeech.LANG_NOT_SUPPORTED
+                ) {
+                    engine.setLanguage(Locale("ar"))
+                }
+                engine.setSpeechRate(1.0f)
+                pendingText?.let { text ->
+                    pendingText = null
+                    speakNow(text)
+                }
+            }
+        }
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) = Unit
 
@@ -65,14 +71,6 @@ actual class NewsSpeechController actual constructor(context: Any) {
         pendingText = null
         completion = null
         if (ready) engine.stop()
-    }
-
-    private fun engineSafeLanguage(): Locale {
-        val arabicEgypt = Locale("ar", "EG")
-        val result = engine.setLanguage(arabicEgypt)
-        return if (result == TextToSpeech.LANG_MISSING_DATA ||
-            result == TextToSpeech.LANG_NOT_SUPPORTED
-        ) Locale("ar") else arabicEgypt
     }
 
     private companion object {
