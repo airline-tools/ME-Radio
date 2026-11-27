@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import org.onedroid.radiowave.presentation.home.HomeScreen
 import org.onedroid.radiowave.presentation.settings.SettingScreen
 import org.onedroid.radiowave.presentation.settings.SettingViewModel
+import org.onedroid.radiowave.presentation.news.NewsMatchesScreen
 
 fun NavGraphBuilder.navGraphBuilder(
     rootNavController: NavController,
@@ -15,6 +16,9 @@ fun NavGraphBuilder.navGraphBuilder(
         HomeScreen(
             rootNavController = rootNavController
         )
+    }
+    composable<Route.NewsMatches> {
+        NewsMatchesScreen(rootNavController = rootNavController)
     }
     composable<Route.Settings> {
         SettingScreen(
