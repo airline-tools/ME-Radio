@@ -76,15 +76,24 @@ fun NewsMatchesScreen(
     }
     val uriHandler = LocalUriHandler.current
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshNews()
-        viewModel.refreshMatches()
-        var refreshCount = 0
+    // Load only the selected feed. Keep the inactive tab idle so slow
+    // sources never compete for bandwidth or parsing time.
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            NewsTab.NEWS -> viewModel.refreshNews()
+            NewsTab.MATCHES -> viewModel.refreshMatches()
+        }
         while (true) {
-            delay(60_000)
-            viewModel.refreshMatches()
-            refreshCount++
-            if (refreshCount % 2 == 0) viewModel.refreshNews()
+            when (selectedTab) {
+                NewsTab.NEWS -> {
+                    delay(120_000)
+                    viewModel.refreshNews()
+                }
+                NewsTab.MATCHES -> {
+                    delay(60_000)
+                    viewModel.refreshMatches()
+                }
+            }
         }
     }
 
