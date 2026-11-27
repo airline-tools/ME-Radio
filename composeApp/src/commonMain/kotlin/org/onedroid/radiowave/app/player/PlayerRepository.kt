@@ -31,7 +31,9 @@ interface PlayerRepository {
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
-        onCloseClick: () -> Unit
+        onCloseClick: () -> Unit,
+        onNewsClick: () -> Unit,
+        onMatchesClick: () -> Unit
     )
 
     fun onCleared()
