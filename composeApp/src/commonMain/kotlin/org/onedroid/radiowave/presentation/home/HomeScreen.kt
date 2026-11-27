@@ -186,24 +186,11 @@ fun HomeScreen(
             }
         },
         sheetPeekHeight = if (viewModel.selectedRadio != null) BottomSheetDefaults.SheetPeekHeight else 0.dp,
-        topBar = { }
-    ) {
-        // Keep the original catalogue UI out of the first frame. The radio
-        // console is the app's landing screen; show only a dark loading surface
-        // until the station catalogue selects its initial station.
-        Box(
-            modifier = Modifier.fillMaxSize().background(Color.Black),
-            contentAlignment = Alignment.Center
-        ) {
-            if (viewModel.selectedRadio == null) {
-                CircularProgressIndicator(color = Color(0xFFC5A059))
-            }
-            // Keep the radio console untouched; this compact entry opens the
-            // separate news/matches area on phones and standard displays.
+        topBar = {
             if (!useWideRadioLayout && viewModel.selectedRadio != null) {
                 Row(
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 12.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
                     Button(
                         onClick = { rootNavController.navigate(Route.NewsMatches) },
@@ -215,6 +202,18 @@ fun HomeScreen(
                         Text("الأخبار والمباريات", fontWeight = FontWeight.Bold)
                     }
                 }
+            }
+        }
+    ) {
+        // Keep the original catalogue UI out of the first frame. The radio
+        // console is the app's landing screen; show only a dark loading surface
+        // until the station catalogue selects its initial station.
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            if (viewModel.selectedRadio == null) {
+                CircularProgressIndicator(color = Color(0xFFC5A059))
             }
         }
     }
