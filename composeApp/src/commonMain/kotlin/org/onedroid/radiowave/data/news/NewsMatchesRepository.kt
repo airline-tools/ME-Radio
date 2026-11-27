@@ -10,6 +10,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class RadioNewsItem(
     val id: String,
@@ -43,7 +45,9 @@ class NewsMatchesRepository(
                 append("Referer", "https://alqaheranews.net/breaking-news")
             }
         }
-        val root = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        val body = response.bodyAsText()
+        return withContext(Dispatchers.Default) {
+        val root = Json.parseToJsonElement(body).jsonObject
         val posts = root["posts"] as? JsonArray ?: return emptyList()
         return posts.mapNotNull { element ->
             val item = element as? JsonObject ?: return@mapNotNull null
@@ -69,6 +73,7 @@ class NewsMatchesRepository(
                     .ifBlank { related?.firstString("image", "imageUrl", "thumbnail", "cover").orEmpty() }
             )
         }.take(30)
+        }
     }
 
     suspend fun getMatches(): List<RadioMatchItem> {
@@ -79,6 +84,7 @@ class NewsMatchesRepository(
             }
         }.bodyAsText()
 
+        return withContext(Dispatchers.Default) {
         val cardRegex = Regex(
             """<a\b[^>]*href=["']([^"']*/match/[^"']*)["'][^>]*>([\s\S]*?)</a>""",
             RegexOption.IGNORE_CASE
@@ -90,6 +96,18 @@ class NewsMatchesRepository(
             "مباشر", "انتهت", "تأجيل", "ملغاة"
         )
         val output = mutableListOf<RadioMatchItem>()
+        // Parse competition headings once. Re-scanning the entire HTML prefix
+        // for every match was quadratic and could freeze the UI on large pages.
+        val tourRegex = Regex(
+            """<a\b[^>]*href=["']([^"']*/tour/[^"']*)["'][^>]*>([\s\S]*?)</a>""",
+            RegexOption.IGNORE_CASE
+        )
+        val ignoredCompetitions = setOf("المباريات", "الأخبار", "المزيد", "نتائج المباريات", "ترتيب الفرق")
+        val tourAnchors = tourRegex.findAll(html).mapNotNull { anchor ->
+            val label = cleanHtml(anchor.groupValues[2])
+            if (label.isBlank() || label in ignoredCompetitions) null
+            else anchor.range.first to label
+        }.toList()
 
         cardRegex.findAll(html).take(100).forEach { match ->
             val href = match.groupValues[1]
@@ -120,8 +138,9 @@ class NewsMatchesRepository(
                 .replace(Regex("""\s+استاد.*$""", RegexOption.IGNORE_CASE), "").trim()
             if (home.isBlank() || away.isBlank() || home.length > 80 || away.length > 80) return@forEach
 
-            val competition = competitionBefore(html, match.range.first)
-                .ifBlank { competitionFromUrl(href) }
+            val competition = tourAnchors.lastOrNull { it.first <= match.range.first }?.second
+                ?.ifBlank { competitionFromUrl(href) }
+                ?: competitionFromUrl(href)
             val absoluteUrl = if (href.startsWith("http")) href else "https://www.yallakora.com" + href
             output += RadioMatchItem(
                 id = "$home|$away|$time",
