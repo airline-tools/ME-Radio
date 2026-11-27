@@ -14,6 +14,11 @@ class PlayerRepositoryImpl(
         playerController.updateStationQueue(stations, currentStationId)
     }
 
+    override fun pauseForAnnouncement(): Boolean = playerController.pauseForAnnouncement()
+
+    override fun resumeAfterAnnouncement(shouldResume: Boolean) =
+        playerController.resumeAfterAnnouncement(shouldResume)
+
     @Composable
     override fun PLayerUI(
         radio: Radio,
