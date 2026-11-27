@@ -63,8 +63,10 @@ class NewsMatchesRepository(
                 source = "عاجل - القاهرة الإخبارية",
                 url = articleUrl,
                 publishedAt = item.string("createdAtUTC").ifBlank { item.string("createdAt") },
-                summary = item.firstString("summary", "excerpt", "description", "content"),
+                summary = item.firstString("summary", "excerpt", "description", "content")
+                    .ifBlank { related?.firstString("summary", "excerpt", "description", "content").orEmpty() },
                 imageUrl = item.firstString("image", "imageUrl", "thumbnail", "cover")
+                    .ifBlank { related?.firstString("image", "imageUrl", "thumbnail", "cover").orEmpty() }
             )
         }.take(30)
     }
