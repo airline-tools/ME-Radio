@@ -10,5 +10,5 @@ sealed interface Route {
     data object Settings : Route
 
     @Serializable
-    data object NewsMatches : Route
+    data class NewsMatches(val initialTab: String = "news") : Route
 }
