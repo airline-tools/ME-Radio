@@ -31,7 +31,8 @@ data class RadioMatchItem(
     val time: String,
     val status: String,
     val competition: String,
-    val url: String
+    val url: String,
+    val competitionImageUrl: String = ""
 )
 
 class NewsMatchesRepository(
@@ -114,8 +115,21 @@ class NewsMatchesRepository(
             )
             val tourAnchors = tourRegex.findAll(html).mapNotNull { anchor ->
                 val label = cleanHtml(anchor.groupValues[2])
-                if (label.isBlank() || label in ignoredCompetitions) null
-                else anchor.range.first to label
+                if (label.isBlank() || label in ignoredCompetitions) {
+                    null
+                } else {
+                    val image = Regex(
+                        """<img[^>]+(?:src|data-src)=["']([^"']+)["']""",
+                        RegexOption.IGNORE_CASE
+                    ).find(anchor.groupValues[2])?.groupValues?.get(1).orEmpty()
+                    val absoluteImage = when {
+                        image.startsWith("//") -> "https:$image"
+                        image.startsWith("/") -> "https://www.yallakora.com$image"
+                        image.startsWith("http") -> image
+                        else -> ""
+                    }
+                    Triple(anchor.range.first, label, absoluteImage)
+                }
             }.toList()
 
             cardRegex.findAll(html).take(100).forEach { match ->
@@ -152,9 +166,10 @@ class NewsMatchesRepository(
                     return@forEach
                 }
 
-                val competition = tourAnchors.lastOrNull { it.first <= match.range.first }?.second
-                    ?.ifBlank { competitionFromUrl(href) }
+                val tournament = tourAnchors.lastOrNull { it.first <= match.range.first }
+                val competition = tournament?.second?.ifBlank { competitionFromUrl(href) }
                     ?: competitionFromUrl(href)
+                val competitionImageUrl = tournament?.third.orEmpty()
                 val absoluteUrl = if (href.startsWith("http")) {
                     href
                 } else {
@@ -167,7 +182,8 @@ class NewsMatchesRepository(
                     time = time,
                     status = status,
                     competition = competition,
-                    url = absoluteUrl
+                    url = absoluteUrl,
+                    competitionImageUrl = competitionImageUrl
                 )
             }
             output.distinctBy { it.id }.take(100)
