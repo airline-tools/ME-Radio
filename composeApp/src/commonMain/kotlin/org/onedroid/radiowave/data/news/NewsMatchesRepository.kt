@@ -182,23 +182,38 @@ class NewsMatchesRepository(
 
                 fun normalizedTeamName(value: String): String = value
                     .lowercase()
-                    .replace(Regex("[\u064B-\u065F\u0670]"), "")
+                    .replace(Regex("""[\u064B-\u065F\u0670]"""), "")
                     .replace("ـ", "")
                     .replace(Regex("""[^\p{L}\p{N}]"""), "")
 
+                fun attribute(tag: String, name: String): String =
+                    Regex("""\\b${name}\\s*=\\s*["']([^"']*)["']""", RegexOption.IGNORE_CASE)
+                        .find(tag)?.groupValues?.get(1).orEmpty()
+
                 fun imageUrl(tag: String): String {
-                    val raw = Regex(
-                        """(?:src|data-src|data-original|data-lazy-src|data-image|srcset|data-srcset)\s*=\s*["']([^"']+)["']""",
-                        RegexOption.IGNORE_CASE
-                    ).find(tag)?.groupValues?.get(1)
-                        ?.substringBefore(",")
-                        ?.trim()
-                        ?.substringBefore(" ")
+                    // Prefer real/lazy image sources over placeholders and srcset fallbacks.
+                    val direct = listOf(
+                        "data-src", "data-original", "data-lazy-src", "data-image", "src"
+                    ).firstNotNullOfOrNull { name ->
+                        attribute(tag, name).takeIf { it.isNotBlank() }
+                    }.orEmpty()
+                    val responsive = listOf("data-srcset", "srcset")
+                        .firstNotNullOfOrNull { name ->
+                            attribute(tag, name).takeIf { it.isNotBlank() }
+                        }
                         .orEmpty()
+                        .substringBefore(",")
+                        .trim()
+                        .substringBefore(" ")
+                    val raw = direct.ifBlank { responsive }.trim()
                     return when {
                         raw.startsWith("//") -> "https:$raw"
+                        raw.startsWith("https://", ignoreCase = true) ||
+                            raw.startsWith("http://", ignoreCase = true) -> raw
                         raw.startsWith("/") -> "https://www.yallakora.com$raw"
-                        raw.startsWith("http://") || raw.startsWith("https://") -> raw
+                        raw.isNotBlank() && !raw.startsWith("data:", ignoreCase = true) &&
+                            !raw.startsWith("blob:", ignoreCase = true) ->
+                            "https://www.yallakora.com/$raw"
                         else -> ""
                     }
                 }
@@ -208,38 +223,42 @@ class NewsMatchesRepository(
                 val imageCandidates = imageTags.mapNotNull { tag ->
                     val url = imageUrl(tag)
                     if (url.isBlank()) return@mapNotNull null
-                    val alt = Regex(
-                        """(?:alt|title)\s*=\s*["']([^"']*)["']""",
-                        RegexOption.IGNORE_CASE
-                    ).find(tag)?.groupValues?.get(1).orEmpty()
-                    val classes = Regex(
-                        """class\s*=\s*["']([^"']*)["']""",
-                        RegexOption.IGNORE_CASE
-                    ).find(tag)?.groupValues?.get(1).orEmpty().lowercase()
+                    val alt = listOf("alt", "title", "aria-label", "data-team", "data-team-name")
+                        .firstNotNullOfOrNull { name ->
+                            attribute(tag, name).takeIf { it.isNotBlank() }
+                        }.orEmpty()
+                    val classes = attribute(tag, "class").lowercase()
                     Triple(url, normalizedTeamName(alt), classes)
                 }
 
-                val homeImageUrl = imageCandidates.firstOrNull { candidate ->
-                    (candidate.second.isNotBlank() &&
-                        (candidate.second.contains(homeKey) || homeKey.contains(candidate.second))) ||
-                        candidate.third.contains("home") || candidate.third.contains("team-home")
-                }?.first.orEmpty()
-                val awayImageUrl = imageCandidates.firstOrNull { candidate ->
-                    (candidate.second.isNotBlank() &&
-                        (candidate.second.contains(awayKey) || awayKey.contains(candidate.second))) ||
-                        candidate.third.contains("away") || candidate.third.contains("team-away")
-                }?.first.orEmpty()
+                fun teamImage(teamKey: String, side: String): String {
+                    if (teamKey.isBlank()) return ""
+                    return imageCandidates
+                        .mapNotNull { candidate ->
+                            val alt = candidate.second
+                            val classes = candidate.third
+                            val nameMatch = alt.isNotBlank() &&
+                                (alt == teamKey || alt.contains(teamKey) || teamKey.contains(alt))
+                            val sideMatch = when (side) {
+                                "home" -> classes.contains("home") || classes.contains("team-home")
+                                else -> classes.contains("away") || classes.contains("team-away")
+                            }
+                            val teamClass = classes.contains("team") ||
+                                classes.contains("crest") || classes.contains("flag") ||
+                                classes.contains("logo")
+                            val score = (if (nameMatch) 100 else 0) +
+                                (if (sideMatch) 40 else 0) +
+                                (if (teamClass) 10 else 0)
+                            if (score > 0) score to candidate.first else null
+                        }
+                        .maxByOrNull { it.first }
+                        ?.second.orEmpty()
+                }
 
-                // Older cards omit alt/class metadata; use team/crest/flag images first.
-                val fallbackTeamImages = imageCandidates
-                    .filter { candidate ->
-                        candidate.third.contains("team") ||
-                            candidate.third.contains("crest") ||
-                            candidate.third.contains("flag")
-                    }
-                    .ifEmpty { imageCandidates }
-                val resolvedHomeImage = homeImageUrl.ifBlank { fallbackTeamImages.getOrNull(0)?.first.orEmpty() }
-                val resolvedAwayImage = awayImageUrl.ifBlank { fallbackTeamImages.getOrNull(1)?.first.orEmpty() }
+                // Never assign the first two arbitrary images: they may be ads,
+                // competition artwork, or unrelated page decoration.
+                val resolvedHomeImage = teamImage(homeKey, "home")
+                val resolvedAwayImage = teamImage(awayKey, "away")
 
                 val tournament = tourAnchors.lastOrNull { it.first <= match.range.first }
                 val competition = tournament?.second?.ifBlank { competitionFromUrl(href) }
