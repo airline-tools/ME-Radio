@@ -17,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -107,16 +105,17 @@ fun NewsMatchesScreen(
                         Text("الأخبار والمباريات", color = NewsMuted, fontSize = 11.sp)
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = { rootNavController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = NewsWhite)
-                    }
-                },
                 actions = {
-                    IconButton(onClick = {
-                        if (selectedTab == NewsTab.NEWS) viewModel.refreshNews() else viewModel.refreshMatches()
-                    }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "تحديث", tint = NewsLime)
+                    Surface(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable { rootNavController.navigateUp() },
+                        shape = RoundedCornerShape(50),
+                        color = NewsPanelAlt
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("×", color = NewsLime, fontSize = 25.sp, fontWeight = FontWeight.Medium)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NewsNavy)
