@@ -53,7 +53,7 @@ actual class NewsSpeechController actual constructor(context: Any) {
         })
     }
 
-    fun speak(text: String, onDone: () -> Unit) {
+    actual fun speak(text: String, onDone: () -> Unit) {
         stop()
         completion = onDone
         if (!ready) {
@@ -67,7 +67,7 @@ actual class NewsSpeechController actual constructor(context: Any) {
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
     }
 
-    fun stop() {
+    actual fun stop() {
         pendingText = null
         completion = null
         if (ready) engine.stop()
