@@ -187,7 +187,7 @@ class NewsMatchesRepository(
                     .replace(Regex("""[^\p{L}\p{N}]"""), "")
 
                 fun attribute(tag: String, name: String): String =
-                    Regex("""\\b${name}\\s*=\\s*["']([^"']*)["']""", RegexOption.IGNORE_CASE)
+                    Regex("""\b${name}\s*=\s*["']([^"']*)["']""", RegexOption.IGNORE_CASE)
                         .find(tag)?.groupValues?.get(1).orEmpty()
 
                 fun imageUrl(tag: String): String {
