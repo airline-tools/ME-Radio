@@ -187,20 +187,20 @@ fun HomeScreen(
         },
         sheetPeekHeight = if (viewModel.selectedRadio != null) BottomSheetDefaults.SheetPeekHeight else 0.dp,
         topBar = {
-            if (!useWideRadioLayout && viewModel.selectedRadio != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 12.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.End
+            // Keep News & Matches reachable on every device size and before
+            // the radio catalogue finishes loading.
+            Row(
+                modifier = Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 12.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = { rootNavController.navigate(Route.NewsMatches) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF172D43),
+                        contentColor = Color(0xFFC8F169)
+                    )
                 ) {
-                    Button(
-                        onClick = { rootNavController.navigate(Route.NewsMatches) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF172D43),
-                            contentColor = Color(0xFFC8F169)
-                        )
-                    ) {
-                        Text("الأخبار والمباريات", fontWeight = FontWeight.Bold)
-                    }
+                    Text("الأخبار والمباريات", fontWeight = FontWeight.Bold)
                 }
             }
         }
