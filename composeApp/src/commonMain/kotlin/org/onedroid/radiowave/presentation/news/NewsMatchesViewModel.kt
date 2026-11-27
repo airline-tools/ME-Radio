@@ -6,12 +6,16 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import org.onedroid.radiowave.app.player.PlayerRepository
+import org.onedroid.radiowave.app.speech.NewsSpeechController
 import org.onedroid.radiowave.data.news.NewsMatchesRepository
 import org.onedroid.radiowave.data.news.RadioMatchItem
 import org.onedroid.radiowave.data.news.RadioNewsItem
 
 class NewsMatchesViewModel(
-    private val repository: NewsMatchesRepository
+    private val repository: NewsMatchesRepository,
+    private val playerRepository: PlayerRepository,
+    private val speechController: NewsSpeechController
 ) : ViewModel() {
     var news by mutableStateOf<List<RadioNewsItem>>(emptyList())
         private set
@@ -27,6 +31,12 @@ class NewsMatchesViewModel(
         private set
     var selectedNewsIndex by mutableStateOf(0)
         private set
+    var isReading by mutableStateOf(false)
+        private set
+    var isSpeechPaused by mutableStateOf(false)
+        private set
+
+    private var radioWasPlaying = false
 
     fun refreshNews() {
         if (isLoadingNews) return
@@ -59,11 +69,74 @@ class NewsMatchesViewModel(
         if (news.isNotEmpty()) selectedNewsIndex = index.coerceIn(news.indices)
     }
 
+    fun startReading() {
+        if (news.isEmpty()) return
+        if (!isReading) {
+            radioWasPlaying = playerRepository.pauseForAnnouncement()
+        }
+        isReading = true
+        isSpeechPaused = false
+        speakSelected()
+    }
+
+    fun pauseReading() {
+        if (!isReading || isSpeechPaused) return
+        speechController.stop()
+        isSpeechPaused = true
+    }
+
+    fun resumeReading() {
+        if (!isReading || !isSpeechPaused) return
+        isSpeechPaused = false
+        speakSelected()
+    }
+
+    fun stopReading() {
+        speechController.stop()
+        isReading = false
+        isSpeechPaused = false
+        playerRepository.resumeAfterAnnouncement(radioWasPlaying)
+        radioWasPlaying = false
+    }
+
     fun nextNews() {
-        if (news.isNotEmpty()) selectedNewsIndex = (selectedNewsIndex + 1) % news.size
+        if (news.isEmpty()) return
+        selectedNewsIndex = (selectedNewsIndex + 1) % news.size
+        if (isReading && !isSpeechPaused) speakSelected()
     }
 
     fun previousNews() {
-        if (news.isNotEmpty()) selectedNewsIndex = (selectedNewsIndex - 1 + news.size) % news.size
+        if (news.isEmpty()) return
+        selectedNewsIndex = (selectedNewsIndex - 1 + news.size) % news.size
+        if (isReading && !isSpeechPaused) speakSelected()
+    }
+
+    private fun speakSelected() {
+        if (!isReading || isSpeechPaused || news.isEmpty()) return
+        val item = news[selectedNewsIndex]
+        val spokenText = buildString {
+            append(item.title)
+            if (item.summary.isNotBlank() && item.summary != item.title) {
+                append(". ")
+                append(item.summary)
+            }
+        }
+        speechController.speak(spokenText) {
+            viewModelScope.launch {
+                if (!isReading || isSpeechPaused) return@launch
+                if (selectedNewsIndex < news.lastIndex) {
+                    selectedNewsIndex += 1
+                    speakSelected()
+                } else {
+                    stopReading()
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        speechController.stop()
+        playerRepository.resumeAfterAnnouncement(radioWasPlaying)
+        super.onCleared()
     }
 }
