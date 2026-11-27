@@ -308,9 +308,47 @@ private fun MatchesFeed(viewModel: NewsMatchesViewModel, onOpen: (String) -> Uni
                     Text("${viewModel.matches.size} مباراة", color = NewsMuted, fontSize = 12.sp)
                 }
             }
-            items(viewModel.matches, key = { it.id }) { match ->
-                MatchCard(match) { onOpen(match.url) }
+            viewModel.matches.groupBy { it.competition }.forEach { (competition, fixtures) ->
+                item(key = "competition-$competition") {
+                    CompetitionHeader(
+                        name = competition,
+                        imageUrl = fixtures.firstOrNull()?.competitionImageUrl.orEmpty()
+                    )
+                }
+                items(fixtures, key = { it.id }) { match ->
+                    MatchCard(match) { onOpen(match.url) }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun CompetitionHeader(name: String, imageUrl: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                modifier = Modifier.size(42.dp),
+                contentScale = ContentScale.Fit
+            )
+        } else {
+            Surface(
+                modifier = Modifier.size(42.dp),
+                color = NewsPanelAlt,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) { Text("🏆", fontSize = 21.sp) }
+            }
+        }
+        Column {
+            Text(name, color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("مباريات البطولة", color = NewsMuted, fontSize = 10.sp)
         }
     }
 }
@@ -326,7 +364,6 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(match.competition, color = NewsMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.weight(1f))
                 Surface(color = if (live) Color(0xFF5A2027) else NewsPanelAlt, shape = RoundedCornerShape(6.dp)) {
                     Text(match.status, color = if (live) Color.White else NewsLime, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
