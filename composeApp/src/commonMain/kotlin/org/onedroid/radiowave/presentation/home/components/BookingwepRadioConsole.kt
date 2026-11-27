@@ -74,6 +74,8 @@ fun BookingwepRadioConsole(
     onCategoryClick: (String) -> Unit,
     onFavoritesClick: () -> Unit,
     onCloseClick: () -> Unit,
+    onNewsClick: () -> Unit,
+    onMatchesClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -120,9 +122,27 @@ fun BookingwepRadioConsole(
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    modifier = Modifier.tvFocusOutline(RoundedCornerShape(7.dp)).clickable(onClick = onNewsClick),
+                    shape = RoundedCornerShape(7.dp),
+                    color = Color(0xFF1A2A40),
+                    border = BorderStroke(1.dp, Color(0xFFC8F169).copy(alpha = .55f))
+                ) {
+                    Text("الأخبار", modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
+                        color = Color(0xFFC8F169), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+                Surface(
+                    modifier = Modifier.tvFocusOutline(RoundedCornerShape(7.dp)).clickable(onClick = onMatchesClick),
+                    shape = RoundedCornerShape(7.dp),
+                    color = Color(0xFF1A2A40),
+                    border = BorderStroke(1.dp, Color(0xFFC8F169).copy(alpha = .55f))
+                ) {
+                    Text("المباريات", modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
+                        color = Color(0xFFC8F169), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
                 if (showScreenOffButton) {
                     Surface(
                         modifier = Modifier
