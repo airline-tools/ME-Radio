@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import org.onedroid.radiowave.data.news.RadioMatchItem
 import org.onedroid.radiowave.data.news.RadioNewsItem
@@ -72,6 +73,13 @@ fun NewsMatchesScreen(
     LaunchedEffect(Unit) {
         viewModel.refreshNews()
         viewModel.refreshMatches()
+        var refreshCount = 0
+        while (true) {
+            delay(60_000)
+            viewModel.refreshMatches()
+            refreshCount++
+            if (refreshCount % 2 == 0) viewModel.refreshNews()
+        }
     }
 
     Scaffold(
