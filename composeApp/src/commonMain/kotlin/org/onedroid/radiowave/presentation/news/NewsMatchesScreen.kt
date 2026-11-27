@@ -410,12 +410,16 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
 
 @Composable
 private fun TeamBadge(imageUrl: String, teamName: String) {
-    if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
+    var imageFailed by remember(imageUrl) { mutableStateOf(false) }
+    val hasRemoteImage = imageUrl.startsWith("https://") || imageUrl.startsWith("http://")
+
+    if (hasRemoteImage && !imageFailed) {
         AsyncImage(
             model = imageUrl,
             contentDescription = teamName,
             modifier = Modifier.size(38.dp),
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Fit,
+            onError = { imageFailed = true }
         )
     } else {
         Surface(
@@ -424,7 +428,12 @@ private fun TeamBadge(imageUrl: String, teamName: String) {
             shape = RoundedCornerShape(50)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(teamName.trim().take(1), color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(
+                    teamName.trim().take(1),
+                    color = NewsLime,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
             }
         }
     }
