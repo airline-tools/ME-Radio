@@ -173,20 +173,73 @@ class NewsMatchesRepository(
                 val scoreMatch = Regex("""(?<![0-9])([0-9]{1,2})\s*[-:]\s*([0-9]{1,2})(?![0-9])""").find(text)
                 val homeScore = scoreMatch?.groupValues?.get(1).orEmpty()
                 val awayScore = scoreMatch?.groupValues?.get(2).orEmpty()
-                val teamImages = Regex(
-                    """<img[^>]+(?:src|data-src)=["']([^"']+)["'][^>]*>""",
+                // YallaKora uses different lazy-loading attributes across match cards.
+                // Read common image URL attributes and prefer images tagged with each team.
+                val imageTags = Regex(
+                    """<img\b[^>]*>""",
                     RegexOption.IGNORE_CASE
-                ).findAll(match.groupValues[2]).map { imageMatch ->
-                    val source = imageMatch.groupValues[1]
-                    when {
-                        source.startsWith("//") -> "https:$source"
-                        source.startsWith("/") -> "https://www.yallakora.com$source"
-                        source.startsWith("http") -> source
+                ).findAll(match.groupValues[2]).map { it.value }.toList()
+
+                fun normalizedTeamName(value: String): String = value
+                    .lowercase()
+                    .replace(Regex("[\u064B-\u065F\u0670]"), "")
+                    .replace("ـ", "")
+                    .replace(Regex("[^\p{L}\p{N}]"), "")
+
+                fun imageUrl(tag: String): String {
+                    val raw = Regex(
+                        """(?:src|data-src|data-original|data-lazy-src|data-image|srcset|data-srcset)\s*=\s*["']([^"']+)["']""",
+                        RegexOption.IGNORE_CASE
+                    ).find(tag)?.groupValues?.get(1)
+                        ?.substringBefore(",")
+                        ?.trim()
+                        ?.substringBefore(" ")
+                        .orEmpty()
+                    return when {
+                        raw.startsWith("//") -> "https:$raw"
+                        raw.startsWith("/") -> "https://www.yallakora.com$raw"
+                        raw.startsWith("http://") || raw.startsWith("https://") -> raw
                         else -> ""
                     }
-                }.filter { it.isNotBlank() }.take(2).toList()
-                val homeImageUrl = teamImages.getOrNull(0).orEmpty()
-                val awayImageUrl = teamImages.getOrNull(1).orEmpty()
+                }
+
+                val homeKey = normalizedTeamName(home)
+                val awayKey = normalizedTeamName(away)
+                val imageCandidates = imageTags.mapNotNull { tag ->
+                    val url = imageUrl(tag)
+                    if (url.isBlank()) return@mapNotNull null
+                    val alt = Regex(
+                        """(?:alt|title)\s*=\s*["']([^"']*)["']""",
+                        RegexOption.IGNORE_CASE
+                    ).find(tag)?.groupValues?.get(1).orEmpty()
+                    val classes = Regex(
+                        """class\s*=\s*["']([^"']*)["']""",
+                        RegexOption.IGNORE_CASE
+                    ).find(tag)?.groupValues?.get(1).orEmpty().lowercase()
+                    Triple(url, normalizedTeamName(alt), classes)
+                }
+
+                val homeImageUrl = imageCandidates.firstOrNull { candidate ->
+                    (candidate.second.isNotBlank() &&
+                        (candidate.second.contains(homeKey) || homeKey.contains(candidate.second))) ||
+                        candidate.third.contains("home") || candidate.third.contains("team-home")
+                }?.first.orEmpty()
+                val awayImageUrl = imageCandidates.firstOrNull { candidate ->
+                    (candidate.second.isNotBlank() &&
+                        (candidate.second.contains(awayKey) || awayKey.contains(candidate.second))) ||
+                        candidate.third.contains("away") || candidate.third.contains("team-away")
+                }?.first.orEmpty()
+
+                // Older cards omit alt/class metadata; use team/crest/flag images first.
+                val fallbackTeamImages = imageCandidates
+                    .filter { candidate ->
+                        candidate.third.contains("team") ||
+                            candidate.third.contains("crest") ||
+                            candidate.third.contains("flag")
+                    }
+                    .ifEmpty { imageCandidates }
+                val resolvedHomeImage = homeImageUrl.ifBlank { fallbackTeamImages.getOrNull(0)?.first.orEmpty() }
+                val resolvedAwayImage = awayImageUrl.ifBlank { fallbackTeamImages.getOrNull(1)?.first.orEmpty() }
 
                 val tournament = tourAnchors.lastOrNull { it.first <= match.range.first }
                 val competition = tournament?.second?.ifBlank { competitionFromUrl(href) }
@@ -208,8 +261,8 @@ class NewsMatchesRepository(
                     competitionImageUrl = competitionImageUrl,
                     homeScore = homeScore,
                     awayScore = awayScore,
-                    homeImageUrl = homeImageUrl,
-                    awayImageUrl = awayImageUrl
+                    homeImageUrl = resolvedHomeImage,
+                    awayImageUrl = resolvedAwayImage
                 )
             }
             output.distinctBy { it.id }.take(100)
