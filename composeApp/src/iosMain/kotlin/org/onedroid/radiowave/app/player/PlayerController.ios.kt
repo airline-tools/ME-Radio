@@ -85,6 +85,20 @@ actual class PlayerController : PlayerRepository {
 
     override fun updateStationQueue(stations: List<Radio>, currentStationId: String?) = Unit
 
+    override fun pauseForAnnouncement(): Boolean {
+        val wasPlaying = player.rate.toDouble() != 0.0
+        if (wasPlaying) player.pause()
+        _isPlaying.value = false
+        return wasPlaying
+    }
+
+    override fun resumeAfterAnnouncement(shouldResume: Boolean) {
+        if (shouldResume) {
+            player.play()
+            _isPlaying.value = true
+        }
+    }
+
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
         activateAudioSession()
         val url = NSURL(string = audioUrl)
