@@ -1,13 +1,13 @@
 package org.onedroid.radiowave.app.speech
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.AVFoundation.AVSpeechBoundaryImmediate
-import platform.AVFoundation.AVSpeechSynthesisVoice
-import platform.AVFoundation.AVSpeechSynthesizer
-import platform.AVFoundation.AVSpeechSynthesizerDelegateProtocol
-import platform.AVFoundation.AVSpeechUtterance
-import platform.AVFoundation.speakUtterance
-import platform.AVFoundation.stopSpeakingAtBoundary
+import platform.AVFAudio.AVSpeechBoundaryImmediate
+import platform.AVFAudio.AVSpeechSynthesisVoice
+import platform.AVFAudio.AVSpeechSynthesizer
+import platform.AVFAudio.AVSpeechSynthesizerDelegateProtocol
+import platform.AVFAudio.AVSpeechUtterance
+import platform.AVFAudio.speakUtterance
+import platform.AVFAudio.stopSpeakingAtBoundary
 import platform.Foundation.NSObject
 
 @OptIn(ExperimentalForeignApi::class)
