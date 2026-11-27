@@ -181,7 +181,9 @@ fun HomeScreen(
                     onCloseClick = {
                         viewModel.closePlayer()
                         scope.launch { bottomSheetState.bottomSheetState.hide() }
-                    }
+                    },
+                    onNewsClick = { rootNavController.navigate(Route.NewsMatches("news")) },
+                    onMatchesClick = { rootNavController.navigate(Route.NewsMatches("matches")) }
                 )
             }
         },
