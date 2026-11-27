@@ -50,9 +50,12 @@ actual class NewsSpeechController actual constructor(context: Any) {
 
             override fun onError(utteranceId: String?) {
                 mainHandler.post {
-                    val callback = completion
-                    completion = null
-                    callback?.invoke()
+                    if (utteranceId == activeUtteranceId) {
+                        activeUtteranceId = null
+                        val callback = completion
+                        completion = null
+                        callback?.invoke()
+                    }
                 }
             }
         })
