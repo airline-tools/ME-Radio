@@ -41,7 +41,9 @@ class PlayerRepositoryImpl(
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
-        onCloseClick: () -> Unit
+        onCloseClick: () -> Unit,
+        onNewsClick: () -> Unit,
+        onMatchesClick: () -> Unit
     ) {
         playerController.PLayerUI(
             radio = radio,
@@ -64,7 +66,9 @@ class PlayerRepositoryImpl(
             onWebpageClick = onWebpageClick,
             onShareClick = onShareClick,
             onRetryClick = onRetryClick,
-            onCloseClick = onCloseClick
+            onCloseClick = onCloseClick,
+            onNewsClick = onNewsClick,
+            onMatchesClick = onMatchesClick
         )
     }
 
