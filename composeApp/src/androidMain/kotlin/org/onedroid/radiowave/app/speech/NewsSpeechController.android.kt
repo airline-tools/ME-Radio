@@ -12,6 +12,8 @@ actual class NewsSpeechController actual constructor(context: Any) {
     private var completion: (() -> Unit)? = null
     private var pendingText: String? = null
     private var ready = false
+    private var utteranceSequence = 0
+    private var activeUtteranceId: String? = null
     private lateinit var engine: TextToSpeech
 
     init {
@@ -37,9 +39,12 @@ actual class NewsSpeechController actual constructor(context: Any) {
 
             override fun onDone(utteranceId: String?) {
                 mainHandler.post {
-                    val callback = completion
-                    completion = null
-                    callback?.invoke()
+                    if (utteranceId == activeUtteranceId) {
+                        activeUtteranceId = null
+                        val callback = completion
+                        completion = null
+                        callback?.invoke()
+                    }
                 }
             }
 
@@ -64,16 +69,17 @@ actual class NewsSpeechController actual constructor(context: Any) {
     }
 
     private fun speakNow(text: String) {
-        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, UTTERANCE_ID)
+        utteranceSequence += 1
+        val utteranceId = "me-radio-news-$utteranceSequence"
+        activeUtteranceId = utteranceId
+        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
     }
 
     actual fun stop() {
         pendingText = null
         completion = null
+        activeUtteranceId = null
         if (ready) engine.stop()
     }
 
-    private companion object {
-        const val UTTERANCE_ID = "me-radio-news"
-    }
 }
