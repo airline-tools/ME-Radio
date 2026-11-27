@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -57,6 +58,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.onedroid.radiowave.app.navigation.Route
 import org.onedroid.radiowave.app.theme.Shapes
 import org.onedroid.radiowave.app.theme.compactFeedWidth
 import org.onedroid.radiowave.app.theme.extraSmall
@@ -195,6 +197,24 @@ fun HomeScreen(
         ) {
             if (viewModel.selectedRadio == null) {
                 CircularProgressIndicator(color = Color(0xFFC5A059))
+            }
+            // Keep the radio console untouched; this compact entry opens the
+            // separate news/matches area on phones and standard displays.
+            if (!useWideRadioLayout && viewModel.selectedRadio != null) {
+                Row(
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Button(
+                        onClick = { rootNavController.navigate(Route.NewsMatches) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF172D43),
+                            contentColor = Color(0xFFC8F169)
+                        )
+                    ) {
+                        Text("الأخبار والمباريات", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
