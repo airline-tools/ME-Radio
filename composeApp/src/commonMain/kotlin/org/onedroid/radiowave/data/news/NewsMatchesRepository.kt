@@ -91,11 +91,11 @@ class NewsMatchesRepository(
 
         withContext(Dispatchers.Default) {
             val cardRegex = Regex(
-                """<a\\b[^>]*href=["']([^"']*/match/[^"']*)["'][^>]*>([\\s\\S]*?)</a>""",
-                RegexOption.IGNORE_CASE
+                """<a[^>]*href=["']([^"']*/match/[^"']*)["'][^>]*>(.*?)</a>""",
+                setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
             )
-            val timeRegex = Regex("""\\b(?:[01]?\\d|2[0-3]):[0-5]\\d\\b""")
-            val minuteRegex = Regex("""(?:^|\\s)(\\d{1,3})\\s*(?:′|’|'|دقيقة|دقائق)(?=\\s|$)""")
+            val timeRegex = Regex("""([01]?[0-9]|2[0-3]):[0-5][0-9]""")
+            val minuteRegex = Regex("""([0-9]{1,3})[ ]*(?:′|’|'|دقيقة|دقائق)""")
             val statusOptions = listOf(
                 "لم تبدأ بعد", "الشوط الأول", "الشوط الثاني", "بين الشوطين",
                 "استراحة", "وقت إضافي", "ركلات الترجيح", "لم تبدأ",
@@ -106,8 +106,8 @@ class NewsMatchesRepository(
             // Parse tournament headings once, instead of rescanning the full
             // HTML prefix for every match card.
             val tourRegex = Regex(
-                """<a\\b[^>]*href=["']([^"']*/tour/[^"']*)["'][^>]*>([\\s\\S]*?)</a>""",
-                RegexOption.IGNORE_CASE
+                """<a[^>]*href=["']([^"']*/tour/[^"']*)["'][^>]*>(.*?)</a>""",
+                setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
             )
             val ignoredCompetitions = setOf(
                 "المباريات", "الأخبار", "المزيد", "نتائج المباريات", "ترتيب الفرق"
@@ -144,11 +144,10 @@ class NewsMatchesRepository(
                 }
 
                 val homeStart = statusEntry?.let { it.second + it.third } ?: 0
-                var home = text.substring(homeStart, timeIndex).trim()
+                val home = text.substring(homeStart, timeIndex).trim()
                 var away = text.substring(timeMatch.range.last + 1).trim()
-                home = home.replace(Regex("""\\s+[-–—]\\s+[-–—]\\s*$"""), "").trim()
-                away = away.replace(Regex("""\\s+[-–—]\\s+[-–—].*$"""), "").trim()
-                    .replace(Regex("""\\s+استاد.*$""", RegexOption.IGNORE_CASE), "").trim()
+                val stadiumIndex = away.indexOf("استاد")
+                if (stadiumIndex >= 0) away = away.substring(0, stadiumIndex).trim()
                 if (home.isBlank() || away.isBlank() || home.length > 80 || away.length > 80) {
                     return@forEach
                 }
@@ -200,15 +199,15 @@ class NewsMatchesRepository(
     }
 
     private fun cleanHtml(value: String): String = value
-        .replace(Regex("""<script[\\s\\S]*?</script>""", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("""<style[\\s\\S]*?</style>""", RegexOption.IGNORE_CASE), " ")
+        .replace(Regex("""(?is)<script.*?</script>"""), " ")
+        .replace(Regex("""(?is)<style.*?</style>"""), " ")
         .replace(Regex("""<[^>]+>"""), " ")
         .replace("&nbsp;", " ", ignoreCase = true)
         .replace("&#160;", " ")
         .replace("&amp;", "&")
         .replace("&quot;", "\\\"")
         .replace("&#39;", "'")
-        .replace(Regex("""\\s+"""), " ")
+        .replace(Regex("[ ]+"), " ")
         .trim()
 
     private fun JsonObject.string(key: String): String =
