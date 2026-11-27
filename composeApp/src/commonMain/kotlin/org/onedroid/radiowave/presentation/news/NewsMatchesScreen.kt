@@ -374,14 +374,59 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(match.home, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 2)
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 10.dp)) {
-                    Text("VS", color = NewsLime, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    TeamBadge(match.homeImageUrl, match.home)
+                    Text(match.home, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 2)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    if (match.homeScore.isNotBlank() && match.awayScore.isNotBlank()) {
+                        Text(
+                            "${match.homeScore}  -  ${match.awayScore}",
+                            color = NewsLime,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 21.sp
+                        )
+                    } else {
+                        Text("VS", color = NewsLime, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                    }
                     Text(match.time, color = NewsMuted, fontSize = 12.sp)
                 }
-                Text(match.away, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 15.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, maxLines = 2)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    TeamBadge(match.awayImageUrl, match.away)
+                    Text(match.away, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 2)
+                }
             }
             Text("تفاصيل المباراة  ←", color = NewsLime, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun TeamBadge(imageUrl: String, teamName: String) {
+    if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = teamName,
+            modifier = Modifier.size(38.dp),
+            contentScale = ContentScale.Fit
+        )
+    } else {
+        Surface(
+            modifier = Modifier.size(38.dp),
+            color = NewsPanelAlt,
+            shape = RoundedCornerShape(50)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(teamName.trim().take(1), color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
         }
     }
 }
