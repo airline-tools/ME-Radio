@@ -103,7 +103,13 @@ class NewsMatchesRepository(
                     if (index >= 0 && index < timeIndex) Triple(candidate, index, candidate.length) else null
                 }
                 .minByOrNull { it.second }
-            val status = statusEntry?.first ?: "لم تبدأ"
+            var status = statusEntry?.first ?: "لم تبدأ"
+            val minuteMatch = Regex("""(?:^|\\s)(\\d{1,3})\\s*(?:′|’|'|دقيقة|دقائق)(?=\\s|$)""").find(text)
+            val isInProgress = status.contains("الشوط") || status.contains("مباشر") ||
+                status.contains("وقت إضافي") || status.contains("ركلات الترجيح")
+            if (minuteMatch != null && isInProgress) {
+                status += " · ${minuteMatch.groupValues[1]}′"
+            }
             val homeStart = statusEntry?.let { it.second + it.third } ?: 0
             var home = text.substring(homeStart, timeIndex).trim()
             var away = text.substring(timeMatch.range.last + 1).trim()
