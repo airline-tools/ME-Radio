@@ -6,10 +6,8 @@ import io.ktor.client.request.headers
 import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -80,10 +78,10 @@ class NewsMatchesRepository(
         }.bodyAsText()
 
         val cardRegex = Regex(
-            """<a\\b[^>]*href=["']([^"']*/match/[^"']*)["'][^>]*>([\\s\\S]*?)</a>""",
+            """<a\b[^>]*href=["']([^"']*/match/[^"']*)["'][^>]*>([\s\S]*?)</a>""",
             RegexOption.IGNORE_CASE
         )
-        val timeRegex = Regex("""\\b(?:[01]?\\d|2[0-3]):[0-5]\\d\\b""")
+        val timeRegex = Regex("""\b(?:[01]?\d|2[0-3]):[0-5]\d\b""")
         val statusOptions = listOf(
             "لم تبدأ بعد", "الشوط الأول", "الشوط الثاني", "بين الشوطين",
             "استراحة", "وقت إضافي", "ركلات الترجيح", "لم تبدأ",
@@ -109,9 +107,9 @@ class NewsMatchesRepository(
             val homeStart = statusEntry?.let { it.second + it.third } ?: 0
             var home = text.substring(homeStart, timeIndex).trim()
             var away = text.substring(timeMatch.range.last + 1).trim()
-            home = home.replace(Regex("""\\s+[-–—]\\s+[-–—]\\s*$"""), "").trim()
-            away = away.replace(Regex("""\\s+[-–—]\\s+[-–—].*$"""), "").trim()
-                .replace(Regex("""\\s+استاد.*$""", RegexOption.IGNORE_CASE), "").trim()
+            home = home.replace(Regex("""\s+[-–—]\s+[-–—]\s*$"""), "").trim()
+            away = away.replace(Regex("""\s+[-–—]\s+[-–—].*$"""), "").trim()
+                .replace(Regex("""\s+استاد.*$""", RegexOption.IGNORE_CASE), "").trim()
             if (home.isBlank() || away.isBlank() || home.length > 80 || away.length > 80) return@forEach
 
             val competition = competitionBefore(html, match.range.first)
@@ -133,7 +131,7 @@ class NewsMatchesRepository(
     private fun competitionBefore(html: String, position: Int): String {
         val before = html.take(position)
         val tourRegex = Regex(
-            """<a\\b[^>]*href=["']([^"']*/tour/[^"']*)["'][^>]*>([\\s\\S]*?)</a>""",
+            """<a\b[^>]*href=["']([^"']*/tour/[^"']*)["'][^>]*>([\s\S]*?)</a>""",
             RegexOption.IGNORE_CASE
         )
         val ignored = setOf("المباريات", "الأخبار", "المزيد", "نتائج المباريات", "ترتيب الفرق")
@@ -168,15 +166,15 @@ class NewsMatchesRepository(
     }
 
     private fun cleanHtml(value: String): String = value
-        .replace(Regex("""<script[\\s\\S]*?</script>""", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("""<style[\\s\\S]*?</style>""", RegexOption.IGNORE_CASE), " ")
+        .replace(Regex("""<script[\s\S]*?</script>""", RegexOption.IGNORE_CASE), " ")
+        .replace(Regex("""<style[\s\S]*?</style>""", RegexOption.IGNORE_CASE), " ")
         .replace(Regex("""<[^>]+>"""), " ")
         .replace("&nbsp;", " ", ignoreCase = true)
         .replace("&#160;", " ")
         .replace("&amp;", "&")
         .replace("&quot;", "\"")
         .replace("&#39;", "'")
-        .replace(Regex("""\\s+"""), " ")
+        .replace(Regex("""\s+"""), " ")
         .trim()
 
     private fun JsonObject.string(key: String): String =
