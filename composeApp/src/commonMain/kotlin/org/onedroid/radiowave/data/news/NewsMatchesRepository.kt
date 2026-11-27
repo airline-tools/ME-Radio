@@ -170,7 +170,7 @@ class NewsMatchesRepository(
                     return@forEach
                 }
 
-                val scoreMatch = Regex("""(?<![0-9])([0-9]{1,2})\\s*[-:]\\s*([0-9]{1,2})(?![0-9])""").find(text)
+                val scoreMatch = Regex("""(?<![0-9])([0-9]{1,2})\s*[-:]\s*([0-9]{1,2})(?![0-9])""").find(text)
                 val homeScore = scoreMatch?.groupValues?.get(1).orEmpty()
                 val awayScore = scoreMatch?.groupValues?.get(2).orEmpty()
                 val teamImages = Regex(
