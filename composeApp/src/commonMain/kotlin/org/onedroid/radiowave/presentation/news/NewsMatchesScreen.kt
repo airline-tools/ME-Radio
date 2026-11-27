@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
+import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 import org.onedroid.radiowave.data.news.RadioMatchItem
 import org.onedroid.radiowave.data.news.RadioNewsItem
@@ -256,6 +258,14 @@ private fun NewsCard(item: RadioNewsItem, onClick: () -> Unit) {
                 if (item.publishedAt.isNotBlank()) {
                     Text(item.publishedAt.take(16).replace("T", " "), color = NewsMuted, fontSize = 10.sp)
                 }
+            }
+            if (item.imageUrl.startsWith("https://") || item.imageUrl.startsWith("http://")) {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(150.dp),
+                    contentScale = ContentScale.Crop
+                )
             }
             Text(item.title, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 17.sp, lineHeight = 26.sp)
             if (item.summary.isNotBlank()) {
