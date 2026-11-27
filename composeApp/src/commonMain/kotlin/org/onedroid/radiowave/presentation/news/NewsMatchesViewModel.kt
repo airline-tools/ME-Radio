@@ -83,6 +83,7 @@ class NewsMatchesViewModel(
         if (news.isEmpty()) return
         if (!isReading) {
             radioWasPlaying = playerRepository.pauseForAnnouncement()
+            selectedNewsIndex = news.lastIndex
         }
         isReading = true
         isSpeechPaused = false
@@ -111,13 +112,13 @@ class NewsMatchesViewModel(
 
     fun nextNews() {
         if (news.isEmpty()) return
-        selectedNewsIndex = (selectedNewsIndex + 1) % news.size
+        selectedNewsIndex = (selectedNewsIndex - 1 + news.size) % news.size
         if (isReading && !isSpeechPaused) speakSelected()
     }
 
     fun previousNews() {
         if (news.isEmpty()) return
-        selectedNewsIndex = (selectedNewsIndex - 1 + news.size) % news.size
+        selectedNewsIndex = (selectedNewsIndex + 1) % news.size
         if (isReading && !isSpeechPaused) speakSelected()
     }
 
@@ -134,8 +135,8 @@ class NewsMatchesViewModel(
         speechController.speak(spokenText) {
             viewModelScope.launch {
                 if (!isReading || isSpeechPaused) return@launch
-                if (selectedNewsIndex < news.lastIndex) {
-                    selectedNewsIndex += 1
+                if (selectedNewsIndex > 0) {
+                    selectedNewsIndex -= 1
                     speakSelected()
                 } else {
                     stopReading()
