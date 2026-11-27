@@ -6,6 +6,8 @@ import org.onedroid.radiowave.domain.Radio
 interface PlayerRepository {
     fun play(audioUrl: String, referer: String? = null, stationName: String? = null)
     fun updateStationQueue(stations: List<Radio>, currentStationId: String?)
+    fun pauseForAnnouncement(): Boolean
+    fun resumeAfterAnnouncement(shouldResume: Boolean)
 
     @Composable
     fun PLayerUI(
