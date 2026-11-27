@@ -361,6 +361,17 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         }
     }
 
+    override fun pauseForAnnouncement(): Boolean {
+        val connected = player ?: return false
+        val wasPlaying = connected.isPlaying
+        if (wasPlaying) connected.pause()
+        return wasPlaying
+    }
+
+    override fun resumeAfterAnnouncement(shouldResume: Boolean) {
+        if (shouldResume) player?.play()
+    }
+
     override fun play(audioUrl: String, referer: String?, stationName: String?) {
         if (audioUrl.isBlank()) return
         pendingPlayback = PendingPlayback(audioUrl, referer, stationName)
