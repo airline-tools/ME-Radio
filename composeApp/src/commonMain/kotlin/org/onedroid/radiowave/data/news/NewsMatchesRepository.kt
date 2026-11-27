@@ -7,9 +7,9 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 data class RadioNewsItem(
     val id: String,
@@ -186,7 +186,7 @@ class NewsMatchesRepository(
         .trim()
 
     private fun JsonObject.string(key: String): String =
-        this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+        (this[key] as? JsonPrimitive)?.contentOrNull.orEmpty()
 
     private fun JsonObject.firstString(vararg keys: String): String =
         keys.firstNotNullOfOrNull { key -> string(key).takeIf { it.isNotBlank() } }.orEmpty()
