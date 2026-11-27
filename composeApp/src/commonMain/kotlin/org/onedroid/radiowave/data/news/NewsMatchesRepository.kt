@@ -32,7 +32,11 @@ data class RadioMatchItem(
     val status: String,
     val competition: String,
     val url: String,
-    val competitionImageUrl: String = ""
+    val competitionImageUrl: String = "",
+    val homeScore: String = "",
+    val awayScore: String = "",
+    val homeImageUrl: String = "",
+    val awayImageUrl: String = ""
 )
 
 class NewsMatchesRepository(
@@ -166,6 +170,24 @@ class NewsMatchesRepository(
                     return@forEach
                 }
 
+                val scoreMatch = Regex("""(?<![0-9])([0-9]{1,2})\\s*[-:]\\s*([0-9]{1,2})(?![0-9])""").find(text)
+                val homeScore = scoreMatch?.groupValues?.get(1).orEmpty()
+                val awayScore = scoreMatch?.groupValues?.get(2).orEmpty()
+                val teamImages = Regex(
+                    """<img[^>]+(?:src|data-src)=["']([^"']+)["'][^>]*>""",
+                    RegexOption.IGNORE_CASE
+                ).findAll(match.groupValues[2]).map { imageMatch ->
+                    val source = imageMatch.groupValues[1]
+                    when {
+                        source.startsWith("//") -> "https:$source"
+                        source.startsWith("/") -> "https://www.yallakora.com$source"
+                        source.startsWith("http") -> source
+                        else -> ""
+                    }
+                }.filter { it.isNotBlank() }.take(2).toList()
+                val homeImageUrl = teamImages.getOrNull(0).orEmpty()
+                val awayImageUrl = teamImages.getOrNull(1).orEmpty()
+
                 val tournament = tourAnchors.lastOrNull { it.first <= match.range.first }
                 val competition = tournament?.second?.ifBlank { competitionFromUrl(href) }
                     ?: competitionFromUrl(href)
@@ -183,7 +205,11 @@ class NewsMatchesRepository(
                     status = status,
                     competition = competition,
                     url = absoluteUrl,
-                    competitionImageUrl = competitionImageUrl
+                    competitionImageUrl = competitionImageUrl,
+                    homeScore = homeScore,
+                    awayScore = awayScore,
+                    homeImageUrl = homeImageUrl,
+                    awayImageUrl = awayImageUrl
                 )
             }
             output.distinctBy { it.id }.take(100)
