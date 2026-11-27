@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import org.onedroid.radiowave.app.player.PlayerRepository
 import org.onedroid.radiowave.app.speech.NewsSpeechController
 import org.onedroid.radiowave.data.news.NewsMatchesRepository
@@ -43,13 +44,17 @@ class NewsMatchesViewModel(
         viewModelScope.launch {
             isLoadingNews = true
             newsError = null
-            runCatching { repository.getNews() }
-                .onSuccess {
-                    news = it
-                    if (selectedNewsIndex >= news.size) selectedNewsIndex = 0
-                }
-                .onFailure { newsError = it.message ?: "تعذر تحميل الأخبار" }
-            isLoadingNews = false
+            try {
+                val latest = repository.getNews()
+                // Keep the current list stable while new stories are appended.
+                news = (news + latest).distinctBy { it.id }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                newsError = error.message ?: "تعذر تحميل الأخبار"
+            } finally {
+                isLoadingNews = false
+            }
         }
     }
 
@@ -58,10 +63,15 @@ class NewsMatchesViewModel(
         viewModelScope.launch {
             isLoadingMatches = true
             matchesError = null
-            runCatching { repository.getMatches() }
-                .onSuccess { matches = it }
-                .onFailure { matchesError = it.message ?: "تعذر تحميل المباريات" }
-            isLoadingMatches = false
+            try {
+                matches = repository.getMatches()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                matchesError = error.message ?: "تعذر تحميل المباريات"
+            } finally {
+                isLoadingMatches = false
+            }
         }
     }
 
