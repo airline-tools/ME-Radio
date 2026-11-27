@@ -68,9 +68,12 @@ private enum class NewsTab { NEWS, MATCHES }
 @Composable
 fun NewsMatchesScreen(
     rootNavController: NavController,
+    initialTab: String = "news",
     viewModel: NewsMatchesViewModel = koinViewModel()
 ) {
-    var selectedTab by remember { mutableStateOf(NewsTab.NEWS) }
+    var selectedTab by remember(initialTab) {
+        mutableStateOf(if (initialTab == "matches") NewsTab.MATCHES else NewsTab.NEWS)
+    }
     val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(Unit) {
