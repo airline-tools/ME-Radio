@@ -25,8 +25,8 @@ object HttpClientFactory {
                 )
             }
             install(HttpTimeout) {
-                socketTimeoutMillis = 50_000L
-                requestTimeoutMillis = 50_000L
+                socketTimeoutMillis = 20_000L
+                requestTimeoutMillis = 20_000L
             }
             install(Logging) {
                 logger = object : Logger {
@@ -34,7 +34,7 @@ object HttpClientFactory {
                         println(message)
                     }
                 }
-                level = LogLevel.ALL
+                level = LogLevel.HEADERS
             }
             install(HttpCache)
             defaultRequest {
