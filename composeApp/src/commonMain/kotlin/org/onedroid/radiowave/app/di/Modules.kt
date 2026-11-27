@@ -16,6 +16,8 @@ import org.onedroid.radiowave.data.network.RemoteRadioDataSource
 import org.onedroid.radiowave.data.network.RemoteRadioDataSourceImpl
 import org.onedroid.radiowave.data.repository.RadioRepositoryImpl
 import org.onedroid.radiowave.domain.RadioRepository
+import org.onedroid.radiowave.data.news.NewsMatchesRepository
+import org.onedroid.radiowave.presentation.news.NewsMatchesViewModel
 import org.onedroid.radiowave.presentation.home.HomeViewModel
 import org.onedroid.radiowave.presentation.settings.SettingViewModel
 
@@ -23,6 +25,7 @@ expect val platformModule: Module
 
 val sharedModule = module {
     single { HttpClientFactory.create(get()) }
+    singleOf(::NewsMatchesRepository)
     single { get<DatabaseFactory>().create().setDriver(BundledSQLiteDriver()).build() }
     single { get<RadioWaveDatabase>().radioWaveDao }
     singleOf(::RemoteRadioDataSourceImpl).bind<RemoteRadioDataSource>()
@@ -30,5 +33,6 @@ val sharedModule = module {
     singleOf(::PlayerRepositoryImpl).bind<PlayerRepository>()
     singleOf(::AppPreferences)
     viewModelOf(::HomeViewModel)
+    viewModelOf(::NewsMatchesViewModel)
     viewModelOf(::SettingViewModel)
 }
