@@ -184,7 +184,7 @@ class NewsMatchesRepository(
                     .lowercase()
                     .replace(Regex("[\u064B-\u065F\u0670]"), "")
                     .replace("ـ", "")
-                    .replace(Regex("[^\p{L}\p{N}]"), "")
+                    .replace(Regex("""[^\p{L}\p{N}]"""), "")
 
                 fun imageUrl(tag: String): String {
                     val raw = Regex(
