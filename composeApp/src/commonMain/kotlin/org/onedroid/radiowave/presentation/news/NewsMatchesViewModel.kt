@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.onedroid.radiowave.app.player.PlayerRepository
 import org.onedroid.radiowave.app.speech.NewsSpeechController
 import org.onedroid.radiowave.data.news.NewsMatchesRepository
@@ -87,7 +90,7 @@ class NewsMatchesViewModel(
         }
         isReading = true
         isSpeechPaused = false
-        speakSelected()
+        speakBulletinIntro()
     }
 
     fun pauseReading() {
@@ -122,6 +125,37 @@ class NewsMatchesViewModel(
         if (isReading && !isSpeechPaused) speakSelected()
     }
 
+    private fun speakBulletinIntro() {
+        if (!isReading || isSpeechPaused || news.isEmpty()) return
+        val date = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val weekday = listOf("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد")[date.dayOfWeek.ordinal]
+        val gregorianMonths = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+        val hijri = toTabularHijri(date.toEpochDays() + 2_440_588)
+        val intro = "إليكم آخر أخبار اليوم، $weekday، الموافق ${date.dayOfMonth} من شهر ${gregorianMonths[date.monthNumber - 1]} لعام ${date.year} ميلادياً، والموافق ${hijri.third} من شهر ${hijri.second} لعام ${hijri.first} هجرياً. نبدأ الآن نشرتنا الإخبارية."
+        speechController.speak(intro) {
+            viewModelScope.launch { if (isReading && !isSpeechPaused) speakSelected() }
+        }
+    }
+
+    private fun toTabularHijri(julianDay: Int): Triple<Int, String, Int> {
+        val l0 = julianDay - 1_948_440 + 10_632
+        val n = l0 / 10_631
+        val l1 = l0 - 10_631 * n + 354
+        val j = ((10_985 - l1) / 5_316) * ((50 * l1) / 17_719) + (l1 / 5_670) * ((43 * l1) / 15_238)
+        val l2 = l1 - ((30 - j) / 15) * ((17_719 * j) / 50) - (j / 16) * ((15_238 * j) / 43) + 29
+        val month = (24 * l2) / 709
+        val day = l2 - (709 * month) / 24
+        val year = 30 * n + j - 30
+        val months = listOf("محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة")
+        return Triple(year, months[(month - 1).coerceIn(0, 11)], day)
+    }
+
+    private fun speakBulletinOutro() {
+        if (!isReading || isSpeechPaused) return
+        speechController.speak("كانت هذه نشرتنا الإخبارية. شكرًا لحسن استماعكم، وإلى اللقاء في أخبار قادمة.") {
+            viewModelScope.launch { if (isReading && !isSpeechPaused) stopReading() }
+        }
+    }
     private fun speakSelected() {
         if (!isReading || isSpeechPaused || news.isEmpty()) return
         val item = news[selectedNewsIndex]
@@ -139,7 +173,7 @@ class NewsMatchesViewModel(
                     selectedNewsIndex -= 1
                     speakSelected()
                 } else {
-                    stopReading()
+                    speakBulletinOutro()
                 }
             }
         }
