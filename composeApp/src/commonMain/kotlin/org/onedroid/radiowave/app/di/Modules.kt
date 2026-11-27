@@ -34,7 +34,6 @@ val sharedModule = module {
     singleOf(::PlayerRepositoryImpl).bind<PlayerRepository>()
     singleOf(::AppPreferences)
     viewModelOf(::HomeViewModel)
-    single { NewsSpeechController(Unit) }
     viewModelOf(::NewsMatchesViewModel)
     viewModelOf(::SettingViewModel)
 }
