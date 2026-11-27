@@ -161,6 +161,60 @@ private fun NewsFeed(viewModel: NewsMatchesViewModel, onOpen: (String) -> Unit) 
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = NewsPanelAlt),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Text("النشرة الصوتية", color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            viewModel.news.getOrNull(viewModel.selectedNewsIndex)?.title.orEmpty(),
+                            color = NewsWhite,
+                            fontSize = 12.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Button(
+                                onClick = viewModel::previousNews,
+                                colors = ButtonDefaults.buttonColors(containerColor = NewsPanel, contentColor = NewsWhite)
+                            ) { Text("السابق", fontSize = 11.sp) }
+                            Button(
+                                onClick = {
+                                    when {
+                                        !viewModel.isReading -> viewModel.startReading()
+                                        viewModel.isSpeechPaused -> viewModel.resumeReading()
+                                        else -> viewModel.pauseReading()
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = NewsLime, contentColor = NewsNavy)
+                            ) {
+                                Text(
+                                    when {
+                                        !viewModel.isReading -> "▶ قراءة"
+                                        viewModel.isSpeechPaused -> "▶ استكمال"
+                                        else -> "Ⅱ إيقاف مؤقت"
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Button(
+                                onClick = viewModel::nextNews,
+                                colors = ButtonDefaults.buttonColors(containerColor = NewsPanel, contentColor = NewsWhite)
+                            ) { Text("التالي", fontSize = 11.sp) }
+                            if (viewModel.isReading) {
+                                Button(
+                                    onClick = viewModel::stopReading,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5A2027), contentColor = Color.White)
+                                ) { Text("إنهاء", fontSize = 11.sp) }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = Color(0xFF5A2027), shape = RoundedCornerShape(6.dp)) {
                         Text("عاجل", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
