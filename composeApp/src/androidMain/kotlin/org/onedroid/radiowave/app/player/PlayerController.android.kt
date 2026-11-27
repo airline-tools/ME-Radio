@@ -180,7 +180,9 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
         onWebpageClick: () -> Unit,
         onShareClick: () -> Unit,
         onRetryClick: () -> Unit,
-        onCloseClick: () -> Unit
+        onCloseClick: () -> Unit,
+        onNewsClick: () -> Unit,
+        onMatchesClick: () -> Unit
     ) {
         val isPlayingState by isPlaying.collectAsState()
         val useStationGrid = remember { isTvOrCarDevice() }
@@ -251,6 +253,8 @@ actual class PlayerController(private val context: Context) : PlayerRepository {
             onCategoryClick = onCategoryClick,
             onFavoritesClick = onFavoritesClick,
             onCloseClick = onCloseClick,
+            onNewsClick = onNewsClick,
+            onMatchesClick = onMatchesClick,
             onPlayPauseClick = { pauseResume() },
             onPreviousClick = onPreviousClick,
             onNextClick = onNextClick,
