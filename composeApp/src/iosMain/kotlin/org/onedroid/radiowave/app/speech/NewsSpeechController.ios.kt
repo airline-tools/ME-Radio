@@ -37,7 +37,7 @@ actual class NewsSpeechController actual constructor(context: Any) {
         synthesizer.delegate = speechDelegate
     }
 
-    fun speak(text: String, onDone: () -> Unit) {
+    actual fun speak(text: String, onDone: () -> Unit) {
         stop()
         completion = onDone
         val utterance = AVSpeechUtterance.speechUtteranceWithString(text)
@@ -47,7 +47,7 @@ actual class NewsSpeechController actual constructor(context: Any) {
         synthesizer.speakUtterance(utterance)
     }
 
-    fun stop() {
+    actual fun stop() {
         completion = null
         synthesizer.stopSpeakingAtBoundary(AVSpeechBoundaryImmediate)
     }
