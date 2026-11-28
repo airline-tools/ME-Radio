@@ -128,20 +128,20 @@ fun BookingwepRadioConsole(
                 Surface(
                     modifier = Modifier.tvFocusOutline(RoundedCornerShape(7.dp)).clickable(onClick = onNewsClick),
                     shape = RoundedCornerShape(7.dp),
-                    color = Color(0xFF1A2A40),
-                    border = BorderStroke(1.dp, Color(0xFFC8F169).copy(alpha = .55f))
+                    color = RadioNavyLight,
+                    border = BorderStroke(1.dp, RadioGold.copy(alpha = .75f))
                 ) {
                     Text("الأخبار", modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
-                        color = Color(0xFFC8F169), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        color = RadioGoldLight, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 Surface(
                     modifier = Modifier.tvFocusOutline(RoundedCornerShape(7.dp)).clickable(onClick = onMatchesClick),
                     shape = RoundedCornerShape(7.dp),
-                    color = Color(0xFF1A2A40),
-                    border = BorderStroke(1.dp, Color(0xFFC8F169).copy(alpha = .55f))
+                    color = RadioNavyLight,
+                    border = BorderStroke(1.dp, RadioGold.copy(alpha = .75f))
                 ) {
                     Text("المباريات", modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
-                        color = Color(0xFFC8F169), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        color = RadioGoldLight, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 if (showScreenOffButton) {
                     Surface(
