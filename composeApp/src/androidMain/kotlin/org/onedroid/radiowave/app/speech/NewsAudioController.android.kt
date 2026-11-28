@@ -75,6 +75,12 @@ actual class NewsAudioController actual constructor(context: Any) {
     }
 
     private fun finishWithoutPlayer() {
+        val failedPlayer = player
+        player = null
+        if (failedPlayer != null) {
+            runCatching { failedPlayer.stop() }
+            runCatching { failedPlayer.release() }
+        }
         audioFile?.delete()
         audioFile = null
         val callback = completion
