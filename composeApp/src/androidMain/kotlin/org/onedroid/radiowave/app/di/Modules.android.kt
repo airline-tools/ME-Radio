@@ -7,6 +7,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import org.onedroid.radiowave.app.player.PlayerController
+import org.onedroid.radiowave.app.speech.NewsAudioController
 import org.onedroid.radiowave.app.speech.NewsSpeechController
 import org.onedroid.radiowave.data.database.DatabaseFactory
 import org.onedroid.radiowave.data.datastore.dataStorePreferences
@@ -17,5 +18,6 @@ actual val platformModule: Module
         single<HttpClientEngine> { OkHttp.create() }
         singleOf(::PlayerController)
         single { NewsSpeechController(androidApplication()) }
+        single { NewsAudioController(androidApplication()) }
         singleOf(::dataStorePreferences)
     }
