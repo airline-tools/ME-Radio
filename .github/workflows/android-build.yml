@@ -85,7 +85,7 @@ jobs:
         run: |
           set -euo pipefail
           APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
-          EXPECTED="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -i 'SHA256:' | grep -Eio '[0-9a-f]{64}' | head -n 1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | sed -nE 's/.*SHA256:[[:space:]]*//Ip' | head -n 1 | tr -d ':[:space:]' | grep -Eio '[0-9a-f]{64}' | head -n 1 | tr '[:upper:]' '[:lower:]')"
           ACTUAL="$("$APKSIGNER" verify --print-certs composeApp/build/outputs/apk/debug/composeApp-debug.apk | grep -i 'certificate SHA-256 digest' | grep -Eio '[0-9a-f]{64}' | head -n 1 | tr '[:upper:]' '[:lower:]')"
           echo "Persistent keystore SHA-256: $EXPECTED"
           echo "APK signer SHA-256:          $ACTUAL"
