@@ -56,7 +56,7 @@ import org.onedroid.radiowave.data.news.RadioNewsItem
 private val NewsNavy = Color(0xFF071426)
 private val NewsPanel = Color(0xFF10243A)
 private val NewsPanelAlt = Color(0xFF162D43)
-private val NewsLime = Color(0xFFC8F169)
+private val NewsGold = Color(0xFFC5A059)
 private val NewsMuted = Color(0xFF9AAABD)
 private val NewsWhite = Color(0xFFF3F6F8)
 
@@ -101,7 +101,7 @@ fun NewsMatchesScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("ME RADIO", color = NewsLime, fontWeight = FontWeight.Black, fontSize = 17.sp)
+                        Text("ME RADIO", color = NewsGold, fontWeight = FontWeight.Black, fontSize = 17.sp)
                         Text("الأخبار والمباريات", color = NewsMuted, fontSize = 11.sp)
                     }
                 },
@@ -114,7 +114,7 @@ fun NewsMatchesScreen(
                         color = NewsPanelAlt
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("×", color = NewsLime, fontSize = 25.sp, fontWeight = FontWeight.Medium)
+                            Text("×", color = NewsGold, fontSize = 25.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                 },
@@ -157,7 +157,7 @@ private fun TabButton(
 ) {
     Surface(
         modifier = modifier.clickable(onClick = onClick),
-        color = if (selected) NewsLime else NewsPanel,
+        color = if (selected) NewsGold else NewsPanel,
         shape = RoundedCornerShape(14.dp)
     ) {
         Text(
@@ -189,7 +189,7 @@ private fun NewsFeed(viewModel: NewsMatchesViewModel, onOpen: (String) -> Unit) 
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        Text("النشرة الصوتية", color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("النشرة الصوتية", color = NewsGold, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text(
                             viewModel.news.getOrNull(viewModel.selectedNewsIndex)?.title.orEmpty(),
                             color = NewsWhite,
@@ -210,7 +210,7 @@ private fun NewsFeed(viewModel: NewsMatchesViewModel, onOpen: (String) -> Unit) 
                                         else -> viewModel.pauseReading()
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = NewsLime, contentColor = NewsNavy)
+                                colors = ButtonDefaults.buttonColors(containerColor = NewsGold, contentColor = NewsNavy)
                             ) {
                                 Text(
                                     when {
@@ -263,9 +263,9 @@ private fun NewsCard(item: RadioNewsItem, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(7.dp).background(NewsLime, RoundedCornerShape(50)))
+                Box(Modifier.size(7.dp).background(NewsGold, RoundedCornerShape(50)))
                 Spacer(Modifier.width(7.dp))
-                Text(item.source, color = NewsLime, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Text(item.source, color = NewsGold, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.weight(1f))
                 if (item.publishedAt.isNotBlank()) {
                     Text(item.publishedAt.take(16).replace("T", " "), color = NewsMuted, fontSize = 10.sp)
@@ -283,7 +283,7 @@ private fun NewsCard(item: RadioNewsItem, onClick: () -> Unit) {
             if (item.summary.isNotBlank()) {
                 Text(item.summary, color = NewsMuted, fontSize = 13.sp, lineHeight = 21.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
-            if (item.url.isNotBlank()) Text("اقرأ التفاصيل  ←", color = NewsLime, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            if (item.url.isNotBlank()) Text("اقرأ التفاصيل  ←", color = NewsGold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -346,7 +346,7 @@ private fun CompetitionHeader(name: String, imageUrl: String) {
             }
         }
         Column {
-            Text(name, color = NewsLime, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(name, color = NewsGold, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Text("مباريات البطولة", color = NewsMuted, fontSize = 10.sp)
         }
     }
@@ -365,7 +365,7 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(Modifier.weight(1f))
                 Surface(color = if (live) Color(0xFF5A2027) else NewsPanelAlt, shape = RoundedCornerShape(6.dp)) {
-                    Text(match.status, color = if (live) Color.White else NewsLime, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
+                    Text(match.status, color = if (live) Color.White else NewsGold, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
                 }
             }
             Row(
@@ -385,12 +385,12 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
                     if (match.homeScore.isNotBlank() && match.awayScore.isNotBlank()) {
                         Text(
                             "${match.homeScore}  -  ${match.awayScore}",
-                            color = NewsLime,
+                            color = NewsGold,
                             fontWeight = FontWeight.Black,
                             fontSize = 21.sp
                         )
                     } else {
-                        Text("VS", color = NewsLime, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Text("VS", color = NewsGold, fontWeight = FontWeight.Black, fontSize = 16.sp)
                     }
                     Text(match.time, color = NewsMuted, fontSize = 12.sp)
                 }
@@ -403,7 +403,7 @@ private fun MatchCard(match: RadioMatchItem, onClick: () -> Unit) {
                     Text(match.away, color = NewsWhite, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 2)
                 }
             }
-            Text("تفاصيل المباراة  ←", color = NewsLime, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("تفاصيل المباراة  ←", color = NewsGold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -430,7 +430,7 @@ private fun TeamBadge(imageUrl: String, teamName: String) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     teamName.trim().take(1),
-                    color = NewsLime,
+                    color = NewsGold,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -442,7 +442,7 @@ private fun TeamBadge(imageUrl: String, teamName: String) {
 @Composable
 private fun LoadingState() {
     Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = NewsLime)
+        CircularProgressIndicator(color = NewsGold)
     }
 }
 
@@ -451,7 +451,7 @@ private fun ErrorState(message: String, retry: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("تعذر تحميل البيانات", color = NewsWhite, fontWeight = FontWeight.Bold)
         Text(message, color = NewsMuted, textAlign = TextAlign.Center, fontSize = 12.sp)
-        Button(onClick = retry, colors = ButtonDefaults.buttonColors(containerColor = NewsLime, contentColor = NewsNavy)) {
+        Button(onClick = retry, colors = ButtonDefaults.buttonColors(containerColor = NewsGold, contentColor = NewsNavy)) {
             Text("إعادة المحاولة")
         }
     }
