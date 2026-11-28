@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: android-build-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   android-debug:
@@ -29,12 +29,35 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Reuse the same debug key so APK updates can be installed over existing installs.
+      # Restore a single persistent debug signing key. The cache key must never be changed.
       - name: Restore persistent Android debug signing key
-        uses: actions/cache@v4
+        id: android_signing_cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
-          key: me-radio-android-debug-keystore-v1
+          key: me-radio-android-debug-keystore-v2
+
+      # Create the key BEFORE Gradle builds the APK, so the exact same key is saved afterwards.
+      - name: Ensure persistent Android debug signing key exists
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            echo "No cached signing key found. Creating the permanent ME-Radio Android signing key."
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=ME-Radio,C=US" \
+              -noprompt
+          else
+            echo "Restored the existing ME-Radio Android signing key."
+          fi
+          test -s "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -46,8 +69,20 @@ jobs:
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "version_name=1.$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
-      - name: Build versioned Android debug APK
+      - name: Build versioned Android APK
         run: ./gradlew :composeApp:assembleDebug -PappVersionCode=${{ steps.app_version.outputs.version_code }} -PappVersionName=${{ steps.app_version.outputs.version_name }} --stacktrace
+
+      # Save the key explicitly AFTER it has been created and used by the build.
+      - name: Save persistent Android debug signing key
+        if: steps.android_signing_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: me-radio-android-debug-keystore-v2
+
+      - name: Verify APK signing certificate
+        run: |
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner" verify --print-certs composeApp/build/outputs/apk/debug/composeApp-debug.apk
 
       - name: Prepare stable APK asset name
         run: cp composeApp/build/outputs/apk/debug/composeApp-debug.apk ME-Radio.apk
