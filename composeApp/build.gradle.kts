@@ -68,6 +68,16 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
     }
+    // Always sign debug APKs with the persistent keystore restored by android-build.yml.
+    // This prevents Android update failures caused by Gradle generating/using another debug key.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     buildTypes { getByName("release") { isMinifyEnabled = false } }
     compileOptions {
