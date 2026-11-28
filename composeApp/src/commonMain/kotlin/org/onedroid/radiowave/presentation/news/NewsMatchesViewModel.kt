@@ -10,16 +10,20 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.onedroid.radiowave.app.player.PlayerRepository
+import org.onedroid.radiowave.app.speech.NewsAudioController
 import org.onedroid.radiowave.app.speech.NewsSpeechController
 import org.onedroid.radiowave.data.news.NewsMatchesRepository
 import org.onedroid.radiowave.data.news.RadioMatchItem
 import org.onedroid.radiowave.data.news.RadioNewsItem
+import radiowave.composeapp.generated.resources.Res
 
 class NewsMatchesViewModel(
     private val repository: NewsMatchesRepository,
     private val playerRepository: PlayerRepository,
-    private val speechController: NewsSpeechController
+    private val speechController: NewsSpeechController,
+    private val audioController: NewsAudioController
 ) : ViewModel() {
     var news by mutableStateOf<List<RadioNewsItem>>(emptyList())
         private set
@@ -40,6 +44,8 @@ class NewsMatchesViewModel(
     var isSpeechPaused by mutableStateOf(false)
         private set
 
+    private enum class BulletinPhase { OPENING, INTRO, STORY, STINGER, OUTRO, CLOSING }
+    private var phase = BulletinPhase.OPENING
     private var radioWasPlaying = false
 
     fun refreshNews() {
@@ -49,7 +55,6 @@ class NewsMatchesViewModel(
             newsError = null
             try {
                 val latest = repository.getNews()
-                // Keep the current list stable while new stories are appended.
                 news = (news + latest).distinctBy { it.id }
             } catch (error: CancellationException) {
                 throw error
@@ -82,31 +87,55 @@ class NewsMatchesViewModel(
         if (news.isNotEmpty()) selectedNewsIndex = index.coerceIn(news.indices)
     }
 
+    @OptIn(ExperimentalResourceApi::class)
+    private fun themeUri(): String = Res.getUri("files/news_theme.mp3")
+
     fun startReading() {
         if (news.isEmpty()) return
         if (!isReading) {
             radioWasPlaying = playerRepository.pauseForAnnouncement()
             selectedNewsIndex = news.lastIndex
         }
+        speechController.stop()
+        audioController.stop()
         isReading = true
         isSpeechPaused = false
-        speakBulletinIntro()
+        playOpening()
+    }
+
+    private fun playOpening() {
+        if (!isReading || isSpeechPaused) return
+        phase = BulletinPhase.OPENING
+        audioController.play(themeUri(), null) {
+            viewModelScope.launch {
+                if (isReading && !isSpeechPaused) speakBulletinIntro()
+            }
+        }
     }
 
     fun pauseReading() {
         if (!isReading || isSpeechPaused) return
         speechController.stop()
+        audioController.stop()
         isSpeechPaused = true
     }
 
     fun resumeReading() {
         if (!isReading || !isSpeechPaused) return
         isSpeechPaused = false
-        speakSelected()
+        when (phase) {
+            BulletinPhase.OPENING -> playOpening()
+            BulletinPhase.INTRO -> speakBulletinIntro()
+            BulletinPhase.STORY -> speakSelected()
+            BulletinPhase.STINGER -> playStinger()
+            BulletinPhase.OUTRO -> speakBulletinOutro()
+            BulletinPhase.CLOSING -> playClosing()
+        }
     }
 
     fun stopReading() {
         speechController.stop()
+        audioController.stop()
         isReading = false
         isSpeechPaused = false
         playerRepository.resumeAfterAnnouncement(radioWasPlaying)
@@ -116,17 +145,26 @@ class NewsMatchesViewModel(
     fun nextNews() {
         if (news.isEmpty()) return
         selectedNewsIndex = (selectedNewsIndex - 1 + news.size) % news.size
-        if (isReading && !isSpeechPaused) speakSelected()
+        if (isReading && !isSpeechPaused) {
+            speechController.stop()
+            audioController.stop()
+            speakSelected()
+        }
     }
 
     fun previousNews() {
         if (news.isEmpty()) return
         selectedNewsIndex = (selectedNewsIndex + 1) % news.size
-        if (isReading && !isSpeechPaused) speakSelected()
+        if (isReading && !isSpeechPaused) {
+            speechController.stop()
+            audioController.stop()
+            speakSelected()
+        }
     }
 
     private fun speakBulletinIntro() {
         if (!isReading || isSpeechPaused || news.isEmpty()) return
+        phase = BulletinPhase.INTRO
         val date = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val weekday = listOf("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد")[date.dayOfWeek.ordinal]
         val gregorianMonths = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
@@ -150,14 +188,9 @@ class NewsMatchesViewModel(
         return Triple(year, months[(month - 1).coerceIn(0, 11)], day)
     }
 
-    private fun speakBulletinOutro() {
-        if (!isReading || isSpeechPaused) return
-        speechController.speak("كانت هذه نشرتنا الإخبارية. شكرًا لحسن استماعكم، وإلى اللقاء في أخبار قادمة.") {
-            viewModelScope.launch { if (isReading && !isSpeechPaused) stopReading() }
-        }
-    }
     private fun speakSelected() {
         if (!isReading || isSpeechPaused || news.isEmpty()) return
+        phase = BulletinPhase.STORY
         val item = news[selectedNewsIndex]
         val spokenText = buildString {
             append(item.title)
@@ -171,7 +204,7 @@ class NewsMatchesViewModel(
                 if (!isReading || isSpeechPaused) return@launch
                 if (selectedNewsIndex > 0) {
                     selectedNewsIndex -= 1
-                    speakSelected()
+                    playStinger()
                 } else {
                     speakBulletinOutro()
                 }
@@ -179,8 +212,39 @@ class NewsMatchesViewModel(
         }
     }
 
+    @OptIn(ExperimentalResourceApi::class)
+    private fun playStinger() {
+        if (!isReading || isSpeechPaused) return
+        phase = BulletinPhase.STINGER
+        // A short excerpt from the supplied bulletin theme separates the stories.
+        audioController.play(themeUri(), 2_500L) {
+            viewModelScope.launch {
+                if (isReading && !isSpeechPaused) speakSelected()
+            }
+        }
+    }
+
+    private fun speakBulletinOutro() {
+        if (!isReading || isSpeechPaused) return
+        phase = BulletinPhase.OUTRO
+        speechController.speak("وهذه كانت أهم الأخبار للفترة المنقضية. شكرًا لحسن استماعكم.") {
+            viewModelScope.launch {
+                if (isReading && !isSpeechPaused) playClosing()
+            }
+        }
+    }
+
+    private fun playClosing() {
+        if (!isReading || isSpeechPaused) return
+        phase = BulletinPhase.CLOSING
+        audioController.play(themeUri(), null) {
+            viewModelScope.launch { if (isReading && !isSpeechPaused) stopReading() }
+        }
+    }
+
     override fun onCleared() {
         speechController.stop()
+        audioController.stop()
         playerRepository.resumeAfterAnnouncement(radioWasPlaying)
         super.onCleared()
     }
