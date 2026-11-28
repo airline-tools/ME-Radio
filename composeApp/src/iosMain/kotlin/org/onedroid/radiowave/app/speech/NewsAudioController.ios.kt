@@ -32,7 +32,7 @@ actual class NewsAudioController actual constructor(context: Any) {
             finishWithoutPlayer()
             return
         }
-        val nextPlayer = AVAudioPlayer(contentsOfURL = url, error = null)
+        val nextPlayer = AVAudioPlayer(uRL = url, error = null)
         if (nextPlayer == null) {
             finishWithoutPlayer()
             return
