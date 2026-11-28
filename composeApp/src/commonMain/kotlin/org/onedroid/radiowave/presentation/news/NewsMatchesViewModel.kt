@@ -47,6 +47,7 @@ class NewsMatchesViewModel(
     private enum class BulletinPhase { OPENING, INTRO, STORY, STINGER, OUTRO, CLOSING }
     private var phase = BulletinPhase.OPENING
     private var radioWasPlaying = false
+    private var themeBytes: ByteArray? = null
 
     fun refreshNews() {
         if (isLoadingNews) return
@@ -88,7 +89,7 @@ class NewsMatchesViewModel(
     }
 
     @OptIn(ExperimentalResourceApi::class)
-    private fun themeUri(): String = Res.getUri("files/news_theme.mp3")
+    private suspend fun loadThemeBytes(): ByteArray = Res.readBytes("files/news_theme.mp3")
 
     fun startReading() {
         if (news.isEmpty()) return
@@ -100,13 +101,25 @@ class NewsMatchesViewModel(
         audioController.stop()
         isReading = true
         isSpeechPaused = false
-        playOpening()
+        phase = BulletinPhase.OPENING
+        viewModelScope.launch {
+            try {
+                val bytes = themeBytes ?: loadThemeBytes().also { themeBytes = it }
+                if (isReading && !isSpeechPaused) playOpening(bytes)
+            } catch (error: Throwable) {
+                isReading = false
+                playerRepository.resumeAfterAnnouncement(radioWasPlaying)
+                radioWasPlaying = false
+                newsError = "تعذر تحميل موسيقى النشرة: " + (error.message ?: "خطأ غير معروف")
+            }
+        }
     }
 
-    private fun playOpening() {
+    private fun playOpening(bytes: ByteArray? = themeBytes) {
         if (!isReading || isSpeechPaused) return
+        val audioBytes = bytes ?: return
         phase = BulletinPhase.OPENING
-        audioController.play(themeUri(), null) {
+        audioController.play(audioBytes, null) {
             viewModelScope.launch {
                 if (isReading && !isSpeechPaused) speakBulletinIntro()
             }
@@ -217,7 +230,11 @@ class NewsMatchesViewModel(
         if (!isReading || isSpeechPaused) return
         phase = BulletinPhase.STINGER
         // A short excerpt from the supplied bulletin theme separates the stories.
-        audioController.play(themeUri(), 2_500L) {
+        val bytes = themeBytes ?: run {
+            speakSelected()
+            return
+        }
+        audioController.play(bytes, 2_500L) {
             viewModelScope.launch {
                 if (isReading && !isSpeechPaused) speakSelected()
             }
@@ -237,7 +254,11 @@ class NewsMatchesViewModel(
     private fun playClosing() {
         if (!isReading || isSpeechPaused) return
         phase = BulletinPhase.CLOSING
-        audioController.play(themeUri(), null) {
+        val bytes = themeBytes ?: run {
+            stopReading()
+            return
+        }
+        audioController.play(bytes, null) {
             viewModelScope.launch { if (isReading && !isSpeechPaused) stopReading() }
         }
     }
