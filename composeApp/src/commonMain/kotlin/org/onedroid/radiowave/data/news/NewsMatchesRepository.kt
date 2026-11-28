@@ -170,7 +170,16 @@ class NewsMatchesRepository(
                     return@forEach
                 }
 
-                val scoreMatch = Regex("""(?<![0-9])([0-9]{1,2})\s*[-:]\s*([0-9]{1,2})(?![0-9])""").find(text)
+                // A scheduled kickoff time such as 19:30 must never be parsed as a score.
+                // Only live or completed fixtures can have a displayed score.
+                val canHaveScore = isInProgress || status.contains("انتهت")
+                val scoreMatch = if (canHaveScore) {
+                    Regex("""(?<![0-9])([0-9]{1,2})\s*[-:]\s*([0-9]{1,2})(?![0-9])""")
+                        .findAll(text)
+                        .firstOrNull { it.range != timeMatch.range }
+                } else {
+                    null
+                }
                 val homeScore = scoreMatch?.groupValues?.get(1).orEmpty()
                 val awayScore = scoreMatch?.groupValues?.get(2).orEmpty()
                 // YallaKora uses different lazy-loading attributes across match cards.
