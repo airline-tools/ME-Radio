@@ -48,6 +48,7 @@ class NewsMatchesViewModel(
     private var phase = BulletinPhase.OPENING
     private var radioWasPlaying = false
     private var themeBytes: ByteArray? = null
+    private var separatorBytes: ByteArray? = null
 
     fun refreshNews() {
         if (isLoadingNews) return
@@ -91,6 +92,9 @@ class NewsMatchesViewModel(
     @OptIn(ExperimentalResourceApi::class)
     private suspend fun loadThemeBytes(): ByteArray = Res.readBytes("files/news_theme.mp3")
 
+    @OptIn(ExperimentalResourceApi::class)
+    private suspend fun loadSeparatorBytes(): ByteArray = Res.readBytes("files/news_separator.mp3")
+
     fun startReading() {
         if (news.isEmpty()) return
         if (!isReading) {
@@ -105,6 +109,7 @@ class NewsMatchesViewModel(
         viewModelScope.launch {
             try {
                 val bytes = themeBytes ?: loadThemeBytes().also { themeBytes = it }
+                separatorBytes = separatorBytes ?: loadSeparatorBytes()
                 if (isReading && !isSpeechPaused) playOpening(bytes)
             } catch (error: Throwable) {
                 isReading = false
@@ -229,12 +234,12 @@ class NewsMatchesViewModel(
     private fun playStinger() {
         if (!isReading || isSpeechPaused) return
         phase = BulletinPhase.STINGER
-        // A short excerpt from the supplied bulletin theme separates the stories.
-        val bytes = themeBytes ?: run {
+        // Play the dedicated Breaking News Intro 05 separator between stories.
+        val bytes = separatorBytes ?: run {
             speakSelected()
             return
         }
-        audioController.play(bytes, 2_500L) {
+        audioController.play(bytes, null) {
             viewModelScope.launch {
                 if (isReading && !isSpeechPaused) speakSelected()
             }
