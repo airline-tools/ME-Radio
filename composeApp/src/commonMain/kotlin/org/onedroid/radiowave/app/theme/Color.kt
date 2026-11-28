@@ -16,9 +16,9 @@ val shimmerColors = listOf(
 )
 
 val CustomDarkGray = Color(0xFF1f1f1e)
-val CustomLightGreen = Color(0xFF1e3c3b)
-val CustomOrange = Color(0xFFe89d63)
-val CustomGreen = Color(0xFF77dc87)
+val CustomLightGreen = Color(0xFF10243A) // Bookingwep navy
+val CustomOrange = Color(0xFFC5A059) // Bookingwep gold
+val CustomGreen = Color(0xFFC5A059) // Bookingwep gold
 val CustomCyan = Color(0xFF6ac9da)
 
 val primaryLight = Color(0xFF004ACA)
