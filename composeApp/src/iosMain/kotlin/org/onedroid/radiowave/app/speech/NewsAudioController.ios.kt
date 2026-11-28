@@ -1,5 +1,8 @@
 package org.onedroid.radiowave.app.speech
 
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -9,10 +12,13 @@ import kotlinx.coroutines.launch
 import platform.AVFAudio.AVAudioPlayer
 import platform.AVFAudio.AVAudioPlayerDelegateProtocol
 import platform.AVFAudio.play
+import platform.AVFAudio.prepareToPlay
 import platform.AVFAudio.stop
+import platform.Foundation.NSData
+import platform.Foundation.dataWithBytes
 import platform.Foundation.NSObject
-import platform.Foundation.NSURL
 
+@OptIn(ExperimentalForeignApi::class)
 actual class NewsAudioController actual constructor(context: Any) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var player: AVAudioPlayer? = null
@@ -25,29 +31,39 @@ actual class NewsAudioController actual constructor(context: Any) {
         }
     }
 
-    actual fun play(uri: String, maxDurationMs: Long?, onDone: () -> Unit) {
+    actual fun play(bytes: ByteArray, maxDurationMs: Long?, onDone: () -> Unit) {
         stop()
         completion = onDone
-        val url = NSURL.URLWithString(uri) ?: run {
+        if (bytes.isEmpty()) {
             finishWithoutPlayer()
             return
         }
-        val nextPlayer = AVAudioPlayer(uRL = url, error = null)
-        if (nextPlayer == null) {
-            finishWithoutPlayer()
-            return
-        }
-        player = nextPlayer
-        nextPlayer.delegate = audioDelegate
-        if (!nextPlayer.prepareToPlay() || !nextPlayer.play()) {
-            finish(nextPlayer)
-            return
-        }
-        if (maxDurationMs != null && maxDurationMs > 0L) {
-            clipJob = scope.launch {
-                delay(maxDurationMs)
-                if (this@NewsAudioController.player === nextPlayer) finish(nextPlayer)
+
+        try {
+            val audioData = bytes.usePinned { pinned ->
+                NSData.dataWithBytes(pinned.addressOf(0), bytes.size.toULong())
             }
+            val nextPlayer = AVAudioPlayer(data = audioData, error = null)
+            if (nextPlayer == null) {
+                finishWithoutPlayer()
+                return
+            }
+
+            player = nextPlayer
+            nextPlayer.delegate = audioDelegate
+            if (!nextPlayer.prepareToPlay() || !nextPlayer.play()) {
+                finish(nextPlayer)
+                return
+            }
+
+            if (maxDurationMs != null && maxDurationMs > 0L) {
+                clipJob = scope.launch {
+                    delay(maxDurationMs)
+                    if (this@NewsAudioController.player === nextPlayer) finish(nextPlayer)
+                }
+            }
+        } catch (_: Throwable) {
+            finishWithoutPlayer()
         }
     }
 
