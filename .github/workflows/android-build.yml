@@ -40,7 +40,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build versioned Android debug APK
-        run: ./gradlew :composeApp:assembleDebug -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }} --stacktrace
+        run: ./gradlew :composeApp:assembleDebug -PappVersionCode=${{ github.run_number + 1 }} -PappVersionName=1.${{ github.run_number + 1 }} --stacktrace
 
       - name: Prepare stable APK asset name
         run: cp composeApp/build/outputs/apk/debug/composeApp-debug.apk ME-Radio.apk
@@ -56,8 +56,8 @@ jobs:
       - name: Publish latest Android release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: ME-Radio 1.${{ github.run_number }}
+          tag_name: v${{ github.run_number + 1 }}
+          name: ME-Radio 1.${{ github.run_number + 1 }}
           target_commitish: main
           body: |
             Android app update.
