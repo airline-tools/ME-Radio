@@ -80,9 +80,19 @@ jobs:
           path: ~/.android/debug.keystore
           key: me-radio-android-debug-keystore-v2
 
-      - name: Verify APK signing certificate
+      - name: Verify APK signing certificate matches persistent key
+        shell: bash
         run: |
-          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner" verify --print-certs composeApp/build/outputs/apk/debug/composeApp-debug.apk
+          set -euo pipefail
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          EXPECTED="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | awk -F': ' '/SHA256:/{print $2; exit}' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          ACTUAL="$("$APKSIGNER" verify --print-certs composeApp/build/outputs/apk/debug/composeApp-debug.apk | awk -F': ' '/certificate SHA-256 digest:/{print $2; exit}' | tr -d ': ' | tr '[:upper:]' '[:lower:]')"
+          echo "Persistent keystore SHA-256: $EXPECTED"
+          echo "APK signer SHA-256:          $ACTUAL"
+          test -n "$EXPECTED" && test "$EXPECTED" = "$ACTUAL" || {
+            echo "::error::APK is not signed with the persistent keystore."
+            exit 1
+          }
 
       - name: Prepare stable APK asset name
         run: cp composeApp/build/outputs/apk/debug/composeApp-debug.apk ME-Radio.apk
