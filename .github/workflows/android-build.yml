@@ -1,4 +1,4 @@
-name: Android build
+name: Android build and release
 
 on:
   push:
@@ -6,11 +6,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: android-build-main
+  cancel-in-progress: true
 
 jobs:
   android-debug:
-    name: Build Android debug APK
+    name: Build and publish Android APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,8 +29,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Keep the same Android debug signing key between CI runs so updates
-      # can be installed over the previous APK instead of failing signature checks.
+      # Reuse the same debug key so APK updates can be installed over existing installs.
       - name: Restore persistent Android debug signing key
         uses: actions/cache@v4
         with:
@@ -36,13 +39,31 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build debug APK
-        run: ./gradlew :composeApp:assembleDebug --stacktrace
+      - name: Build versioned Android debug APK
+        run: ./gradlew :composeApp:assembleDebug -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }} --stacktrace
 
-      - name: Upload debug APK
+      - name: Prepare stable APK asset name
+        run: cp composeApp/build/outputs/apk/debug/composeApp-debug.apk ME-Radio.apk
+
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ME-Radio-debug-apk
-          path: composeApp/build/outputs/apk/debug/*.apk
+          path: ME-Radio.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish latest Android release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: ME-Radio 1.${{ github.run_number }}
+          target_commitish: main
+          body: |
+            Android app update.
+            Release notes:
+            - تحسينات وإصلاحات للتطبيق.
+          files: ME-Radio.apk
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          make_latest: true
